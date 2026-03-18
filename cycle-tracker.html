@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Cycle Tracker</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; min-height: 100vh; }
+
+    /* Header */
+    .header { background: white; border-bottom: 1px solid #e2e8f0; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 62px; position: sticky; top: 0; z-index: 100; }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header h1 { font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.3px; }
+    .cycle-badge { font-size: 12px; color: #6366f1; background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-weight: 500; }
+
+    /* Nav */
+    .nav { background: white; border-bottom: 1px solid #e2e8f0; display: flex; padding: 0 24px; overflow-x: auto; }
+    .nav button { padding: 14px 18px; border: none; background: none; cursor: pointer; font-size: 14px; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; white-space: nowrap; font-weight: 500; }
+    .nav button.active { color: #6366f1; border-bottom-color: #6366f1; }
+    .nav button:hover:not(.active) { color: #0f172a; }
+
+    /* Layout */
+    .main { max-width: 780px; margin: 0 auto; padding: 24px 20px 60px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Cards */
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin-bottom: 14px; }
+    .card-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .card-title .icon { font-size: 17px; }
+
+    /* Form */
+    .form-group { margin-bottom: 18px; }
+    .form-label { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 7px; display: block; }
+    .form-input { width: 100%; padding: 10px 13px; border: 1px solid #d1d5db; border-radius: 9px; font-size: 14px; color: #0f172a; background: white; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit; }
+    .form-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    textarea.form-input { resize: vertical; min-height: 80px; }
+
+    /* Two-col grid */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 520px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* Toggle */
+    .toggle-row { display: flex; align-items: center; gap: 12px; }
+    .toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: #d1d5db; border-radius: 26px; cursor: pointer; transition: 0.25s; }
+    .toggle-slider:before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.25s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+    .toggle input:checked + .toggle-slider { background: #6366f1; }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+    .toggle-label { font-size: 14px; color: #374151; }
+
+    /* Flow selector */
+    .flow-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+    .flow-opt { padding: 10px 4px; text-align: center; border: 1.5px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 11px; font-weight: 500; color: #64748b; transition: all 0.2s; background: white; }
+    .flow-opt:hover { border-color: #f43f5e; color: #f43f5e; }
+    .flow-opt.selected { background: #fff1f2; border-color: #f43f5e; color: #be185d; }
+    .flow-opt .dot { font-size: 20px; display: block; margin-bottom: 4px; }
+
+    /* Chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip { padding: 7px 13px; border: 1.5px solid #e2e8f0; border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.18s; background: white; color: #374151; user-select: none; }
+    .chip:hover { border-color: #a5b4fc; color: #6366f1; }
+    .chip.selected { background: #eef2ff; border-color: #6366f1; color: #6366f1; font-weight: 500; }
+
+    /* Slider */
+    .slider-group { display: flex; flex-direction: column; gap: 6px; }
+    .slider-row { display: flex; align-items: center; gap: 14px; }
+    .slider { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px; background: #e2e8f0; outline: none; cursor: pointer; }
+    .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #6366f1; cursor: pointer; box-shadow: 0 1px 4px rgba(99,102,241,0.4); }
+    .slider-val { width: 34px; text-align: center; font-size: 16px; font-weight: 700; color: #6366f1; }
+    .slider-ends { display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; }
+
+    /* Counter */
+    .counter-row { display: flex; align-items: center; gap: 10px; }
+    .counter-btn { width: 34px; height: 34px; border: 1.5px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-size: 17px; display: flex; align-items: center; justify-content: center; transition: all 0.18s; color: #374151; line-height: 1; }
+    .counter-btn:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+    .counter-val { width: 44px; text-align: center; font-size: 16px; font-weight: 600; color: #0f172a; }
+    .counter-unit { font-size: 13px; color: #64748b; }
+
+    /* Save button */
+    .btn-primary { background: #6366f1; color: white; border: none; padding: 13px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; width: 100%; font-family: inherit; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-secondary { background: white; color: #374151; border: 1.5px solid #e2e8f0; padding: 10px 18px; border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.18s; font-family: inherit; }
+    .btn-secondary:hover { border-color: #6366f1; color: #6366f1; }
+    .btn-danger { background: white; color: #ef4444; border: 1.5px solid #fca5a5; padding: 10px 18px; border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.18s; }
+    .btn-danger:hover { background: #fef2f2; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 28px; right: 24px; background: #0f172a; color: white; padding: 13px 20px; border-radius: 10px; font-size: 14px; z-index: 1000; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; max-width: 300px; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Calendar */
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .cal-title { font-size: 16px; font-weight: 600; }
+    .cal-nav-btn { background: white; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 5px 13px; cursor: pointer; font-size: 14px; transition: all 0.18s; }
+    .cal-nav-btn:hover { border-color: #6366f1; color: #6366f1; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .cal-day-label { text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; padding: 5px 0; }
+    .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 13px; cursor: pointer; transition: all 0.18s; position: relative; }
+    .cal-day:not(.empty):hover { background: #f1f5f9; }
+    .cal-day.today { font-weight: 700; outline: 2px solid #6366f1; outline-offset: -2px; border-radius: 50%; }
+    .cal-day.has-entry { background: #eef2ff; color: #6366f1; }
+    .cal-day.period-day { background: #fce7f3 !important; color: #be185d !important; font-weight: 700; }
+    .cal-day.today.period-day { outline-color: #be185d; }
+    .cal-day.empty { cursor: default; pointer-events: none; }
+    .cal-dot { position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #6366f1; }
+
+    /* Entry list */
+    .entry-item { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.18s; background: white; }
+    .entry-item:hover { border-color: #a5b4fc; box-shadow: 0 2px 12px rgba(99,102,241,0.1); }
+    .entry-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .entry-date { font-size: 14px; font-weight: 600; }
+    .entry-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+    .tag { font-size: 11px; padding: 3px 9px; border-radius: 12px; background: #f1f5f9; color: #64748b; font-weight: 500; }
+    .tag.period { background: #fce7f3; color: #be185d; }
+    .tag.good { background: #dcfce7; color: #16a34a; }
+    .tag.ok { background: #fef9c3; color: #ca8a04; }
+    .tag.low { background: #fee2e2; color: #dc2626; }
+    .entry-summary { font-size: 13px; color: #64748b; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    @media (max-width: 500px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stat-box { background: white; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-val { font-size: 30px; font-weight: 700; color: #6366f1; line-height: 1; }
+    .stat-label { font-size: 12px; color: #64748b; margin-top: 5px; font-weight: 500; }
+
+    /* Phase banner */
+    .phase-banner { border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 14px; }
+    .phase-icon { font-size: 30px; }
+    .phase-name { font-size: 16px; font-weight: 700; }
+    .phase-desc { font-size: 13px; margin-top: 3px; opacity: 0.75; line-height: 1.4; }
+
+    /* Chart containers */
+    .chart-wrap { position: relative; height: 240px; }
+
+    /* Correlation bars */
+    .corr-item { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f1f5f9; }
+    .corr-item:last-child { border-bottom: none; }
+    .corr-label { font-size: 13px; color: #374151; min-width: 130px; }
+    .corr-bar-bg { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+    .corr-bar { height: 100%; background: linear-gradient(90deg, #818cf8, #6366f1); border-radius: 4px; transition: width 0.6s ease; }
+    .corr-score { font-size: 13px; font-weight: 600; color: #6366f1; min-width: 32px; text-align: right; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(2px); }
+    .modal { background: white; border-radius: 18px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 26px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .modal-close { background: #f1f5f9; border: none; font-size: 16px; cursor: pointer; color: #64748b; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.18s; }
+    .modal-close:hover { background: #e2e8f0; }
+    .modal-section { margin-bottom: 16px; }
+    .modal-section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 8px; }
+    .modal-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f8fafc; font-size: 14px; }
+    .modal-row:last-child { border-bottom: none; }
+    .modal-row-label { color: #64748b; }
+    .modal-row-val { color: #0f172a; font-weight: 500; text-align: right; max-width: 60%; }
+
+    /* Data tab */
+    .data-section { margin-bottom: 28px; }
+    .data-section h3 { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 10px; }
+    .data-desc { font-size: 13px; color: #64748b; margin-bottom: 12px; line-height: 1.5; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
+    .empty .e-icon { font-size: 44px; margin-bottom: 12px; }
+    .empty p { font-size: 15px; }
+    .empty small { font-size: 13px; margin-top: 6px; display: block; }
+
+    /* Divider */
+    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+
+    /* Date navigation in log tab */
+    .date-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .date-nav input[type="date"] { flex: 1; padding: 10px 13px; border: 1.5px solid #e2e8f0; border-radius: 9px; font-size: 14px; font-family: inherit; cursor: pointer; color: #0f172a; }
+    .date-nav input[type="date"]:focus { outline: none; border-color: #6366f1; }
+    .date-nav-btn { background: white; border: 1.5px solid #e2e8f0; border-radius: 9px; padding: 10px 12px; cursor: pointer; font-size: 14px; transition: all 0.18s; color: #374151; }
+    .date-nav-btn:hover { border-color: #6366f1; color: #6366f1; }
+
+    input[type="range"] { cursor: pointer; }
+    select.form-input { cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>🌙 My Cycle Tracker</h1>
+  </div>
+  <div class="cycle-badge" id="cycle-badge">Loading...</div>
+</div>
+
+<nav class="nav">
+  <button class="active" onclick="switchTab('log')">Log Today</button>
+  <button onclick="switchTab('history')">History</button>
+  <button onclick="switchTab('insights')">Insights</button>
+  <button onclick="switchTab('data')">Data</button>
+</nav>
+
+<main class="main">
+
+  <!-- LOG TAB -->
+  <div id="tab-log" class="tab-content active">
+    <div class="date-nav">
+      <button class="date-nav-btn" onclick="shiftLogDate(-1)">‹</button>
+      <input type="date" id="log-date" onchange="loadLogForm()" />
+      <button class="date-nav-btn" onclick="shiftLogDate(1)">›</button>
+      <button class="btn-secondary" onclick="setLogDateToday()" style="white-space:nowrap">Today</button>
+    </div>
+
+    <!-- Period -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🩸</span> Period</div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="period-active" onchange="togglePeriod()" />
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label" id="period-label">Period not active</span>
+        </div>
+      </div>
+      <div id="flow-section" style="display:none">
+        <div class="form-label">Flow intensity</div>
+        <div class="flow-grid">
+          <div class="flow-opt" data-flow="spotting" onclick="selectFlow(this)"><span class="dot">·</span>Spotting</div>
+          <div class="flow-opt" data-flow="light" onclick="selectFlow(this)"><span class="dot">🩸</span>Light</div>
+          <div class="flow-opt" data-flow="medium" onclick="selectFlow(this)"><span class="dot">🩸🩸</span>Medium</div>
+          <div class="flow-opt" data-flow="heavy" onclick="selectFlow(this)"><span class="dot">🩸🩸🩸</span>Heavy</div>
+          <div class="flow-opt" data-flow="very_heavy" onclick="selectFlow(this)"><span class="dot">🩸🩸🩸🩸</span>Very heavy</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Symptoms -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🩺</span> Symptoms</div>
+      <div class="chips" id="symptom-chips">
+        <div class="chip" data-val="cramps" onclick="toggleChip(this,'symptoms')">Cramps</div>
+        <div class="chip" data-val="bloating" onclick="toggleChip(this,'symptoms')">Bloating</div>
+        <div class="chip" data-val="headache" onclick="toggleChip(this,'symptoms')">Headache</div>
+        <div class="chip" data-val="breast_tenderness" onclick="toggleChip(this,'symptoms')">Breast tenderness</div>
+        <div class="chip" data-val="back_pain" onclick="toggleChip(this,'symptoms')">Back pain</div>
+        <div class="chip" data-val="nausea" onclick="toggleChip(this,'symptoms')">Nausea</div>
+        <div class="chip" data-val="fatigue" onclick="toggleChip(this,'symptoms')">Fatigue</div>
+        <div class="chip" data-val="acne" onclick="toggleChip(this,'symptoms')">Acne</div>
+        <div class="chip" data-val="spotting" onclick="toggleChip(this,'symptoms')">Spotting</div>
+        <div class="chip" data-val="clots" onclick="toggleChip(this,'symptoms')">Clots</div>
+        <div class="chip" data-val="dizziness" onclick="toggleChip(this,'symptoms')">Dizziness</div>
+        <div class="chip" data-val="discharge" onclick="toggleChip(this,'symptoms')">Discharge</div>
+      </div>
+    </div>
+
+    <!-- Mood & Energy -->
+    <div class="card">
+      <div class="card-title"><span class="icon">💭</span> Mood & Energy</div>
+      <div class="form-group">
+        <div class="form-label">Overall mood</div>
+        <div class="slider-group">
+          <div class="slider-row">
+            <input type="range" class="slider" id="mood-score" min="1" max="10" value="5" oninput="document.getElementById('mood-val').textContent=this.value" />
+            <span class="slider-val" id="mood-val">5</span>
+          </div>
+          <div class="slider-ends"><span>😞 Low</span><span>😄 High</span></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Energy level</div>
+        <div class="slider-group">
+          <div class="slider-row">
+            <input type="range" class="slider" id="energy-score" min="1" max="10" value="5" oninput="document.getElementById('energy-val').textContent=this.value" />
+            <span class="slider-val" id="energy-val">5</span>
+          </div>
+          <div class="slider-ends"><span>🪫 Drained</span><span>⚡ Full</span></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Emotions</div>
+        <div class="chips" id="emotion-chips">
+          <div class="chip" data-val="happy" onclick="toggleChip(this,'emotions')">Happy</div>
+          <div class="chip" data-val="calm" onclick="toggleChip(this,'emotions')">Calm</div>
+          <div class="chip" data-val="motivated" onclick="toggleChip(this,'emotions')">Motivated</div>
+          <div class="chip" data-val="anxious" onclick="toggleChip(this,'emotions')">Anxious</div>
+          <div class="chip" data-val="irritable" onclick="toggleChip(this,'emotions')">Irritable</div>
+          <div class="chip" data-val="emotional" onclick="toggleChip(this,'emotions')">Emotional</div>
+          <div class="chip" data-val="sad" onclick="toggleChip(this,'emotions')">Sad</div>
+          <div class="chip" data-val="foggy" onclick="toggleChip(this,'emotions')">Brain fog</div>
+          <div class="chip" data-val="hopeful" onclick="toggleChip(this,'emotions')">Hopeful</div>
+          <div class="chip" data-val="depressed" onclick="toggleChip(this,'emotions')">Depressed</div>
+          <div class="chip" data-val="confident" onclick="toggleChip(this,'emotions')">Confident</div>
+          <div class="chip" data-val="overwhelmed" onclick="toggleChip(this,'emotions')">Overwhelmed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Food -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🍽️</span> Food & Cravings</div>
+      <div class="form-group">
+        <label class="form-label">What did you eat today?</label>
+        <textarea class="form-input" id="food-notes" placeholder="e.g. oatmeal for breakfast, salad for lunch..."></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Cravings</div>
+        <div class="chips" id="craving-chips">
+          <div class="chip" data-val="chocolate" onclick="toggleChip(this,'cravings')">Chocolate</div>
+          <div class="chip" data-val="salty" onclick="toggleChip(this,'cravings')">Salty</div>
+          <div class="chip" data-val="sweet" onclick="toggleChip(this,'cravings')">Sweet</div>
+          <div class="chip" data-val="carbs" onclick="toggleChip(this,'cravings')">Carbs</div>
+          <div class="chip" data-val="fatty" onclick="toggleChip(this,'cravings')">Fatty food</div>
+          <div class="chip" data-val="spicy" onclick="toggleChip(this,'cravings')">Spicy</div>
+          <div class="chip" data-val="comfort" onclick="toggleChip(this,'cravings')">Comfort food</div>
+          <div class="chip" data-val="fruit" onclick="toggleChip(this,'cravings')">Fruit</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group" style="margin-bottom:0">
+          <div class="form-label">Water (glasses)</div>
+          <div class="counter-row">
+            <button class="counter-btn" onclick="adjust('water',-1)">−</button>
+            <span class="counter-val" id="water-val">0</span>
+            <button class="counter-btn" onclick="adjust('water',1)">+</button>
+            <span class="counter-unit">glasses</span>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <div class="form-label">Caffeine (cups)</div>
+          <div class="counter-row">
+            <button class="counter-btn" onclick="adjust('caffeine',-1)">−</button>
+            <span class="counter-val" id="caffeine-val">0</span>
+            <button class="counter-btn" onclick="adjust('caffeine',1)">+</button>
+            <span class="counter-unit">cups</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:16px; margin-bottom:0">
+        <div class="form-label">Alcohol (drinks)</div>
+        <div class="counter-row">
+          <button class="counter-btn" onclick="adjust('alcohol',-1)">−</button>
+          <span class="counter-val" id="alcohol-val">0</span>
+          <button class="counter-btn" onclick="adjust('alcohol',1)">+</button>
+          <span class="counter-unit">drinks</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sleep -->
+    <div class="card">
+      <div class="card-title"><span class="icon">😴</span> Sleep</div>
+      <div class="form-group">
+        <div class="form-label">Hours of sleep</div>
+        <div class="slider-group">
+          <div class="slider-row">
+            <input type="range" class="slider" id="sleep-hours" min="2" max="12" step="0.5" value="7" oninput="document.getElementById('sleep-hours-val').textContent=this.value+'h'" />
+            <span class="slider-val" id="sleep-hours-val" style="width:40px;font-size:14px">7h</span>
+          </div>
+          <div class="slider-ends"><span>2h</span><span>12h</span></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Sleep quality</div>
+        <div class="slider-group">
+          <div class="slider-row">
+            <input type="range" class="slider" id="sleep-quality" min="1" max="5" value="3" oninput="document.getElementById('sleep-quality-val').textContent=this.value" />
+            <span class="slider-val" id="sleep-quality-val">3</span>
+          </div>
+          <div class="slider-ends"><span>😫 Terrible</span><span>😌 Great</span></div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Sleep notes</label>
+        <input type="text" class="form-input" id="sleep-notes" placeholder="e.g. woke up twice, vivid dreams..." />
+      </div>
+    </div>
+
+    <!-- Exercise -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🏃</span> Exercise</div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="exercise-active" onchange="toggleExercise()" />
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label">I exercised today</span>
+        </div>
+      </div>
+      <div id="exercise-details" style="display:none">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Type of exercise</label>
+            <input type="text" class="form-input" id="exercise-type" placeholder="e.g. yoga, running, gym..." />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration (minutes)</label>
+            <input type="number" class="form-input" id="exercise-duration" placeholder="30" min="0" />
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Intensity</label>
+          <select class="form-input" id="exercise-intensity">
+            <option value="light">Light</option>
+            <option value="moderate" selected>Moderate</option>
+            <option value="intense">Intense</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📝</span> Notes</div>
+      <textarea class="form-input" id="general-notes" placeholder="Anything else to note about today..."></textarea>
+    </div>
+
+    <button class="btn-primary" onclick="saveEntry()">Save Entry</button>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" class="tab-content">
+    <div class="card">
+      <div id="calendar"></div>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- INSIGHTS TAB -->
+  <div id="tab-insights" class="tab-content">
+    <div id="phase-banner"></div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📈</span> Mood & Energy (Last 60 Days)</div>
+      <div class="chart-wrap"><canvas id="chart-mood"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🩺</span> Most Common Symptoms</div>
+      <div class="chart-wrap"><canvas id="chart-symptoms"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">😴</span> Sleep vs Mood</div>
+      <div class="chart-wrap"><canvas id="chart-sleep"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🍫</span> Top Cravings During Period</div>
+      <div id="craving-insights"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🔗</span> Consistency Patterns</div>
+      <div id="correlation-list"></div>
+    </div>
+  </div>
+
+  <!-- DATA TAB -->
+  <div id="tab-data" class="tab-content">
+    <div class="card">
+      <div class="data-section">
+        <h3>💾 Backup & Restore</h3>
+        <p class="data-desc">Export your data as a JSON file to keep a backup or transfer to another device. Import to restore from a previous backup.</p>
+        <div class="btn-row">
+          <button class="btn-secondary" onclick="exportJSON()">Export JSON backup</button>
+          <button class="btn-secondary" onclick="document.getElementById('import-file').click()">Import JSON backup</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)" />
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="data-section">
+        <h3>📊 Export for Analysis</h3>
+        <p class="data-desc">Export all your logged entries as a CSV file. Open in Excel, Google Sheets, or any spreadsheet app to run your own analysis.</p>
+        <div class="btn-row">
+          <button class="btn-secondary" onclick="exportCSV()">Export CSV</button>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="data-section" style="margin-bottom:0">
+        <h3>🗑️ Clear Data</h3>
+        <p class="data-desc">Permanently delete all tracked entries. This cannot be undone — export a backup first.</p>
+        <div class="btn-row">
+          <button class="btn-danger" onclick="clearAllData()">Delete all data</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="data-summary">
+      <div class="card-title"><span class="icon">📋</span> Summary</div>
+      <div id="data-summary-content"></div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+<div id="modal-container"></div>
+
+<script>
+/* ===================== DATA MANAGEMENT ===================== */
+
+const STORAGE_KEY = 'myCycleTrackerV1';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { entries: {}, cycleDates: [] };
+    return JSON.parse(raw);
+  } catch (e) {
+    return { entries: {}, cycleDates: [] };
+  }
+}
+
+function saveDataStore(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function getEntryDefaults() {
+  return {
+    period: { active: false, flow: null },
+    symptoms: [],
+    mood: { score: 5, energy: 5, emotions: [] },
+    food: { notes: '', cravings: [], water: 0, caffeine: 0, alcohol: 0 },
+    sleep: { hours: 7, quality: 3, notes: '' },
+    exercise: { active: false, type: '', duration: 0, intensity: 'moderate' },
+    notes: ''
+  };
+}
+
+/* ===================== COUNTERS ===================== */
+
+const counters = { water: 0, caffeine: 0, alcohol: 0 };
+
+function adjust(key, delta) {
+  counters[key] = Math.max(0, (counters[key] || 0) + delta);
+  document.getElementById(key + '-val').textContent = counters[key];
+}
+
+/* ===================== CHIP HELPERS ===================== */
+
+const chipState = { symptoms: [], emotions: [], cravings: [] };
+
+function toggleChip(el, group) {
+  const val = el.dataset.val;
+  const idx = chipState[group].indexOf(val);
+  if (idx >= 0) {
+    chipState[group].splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    chipState[group].push(val);
+    el.classList.add('selected');
+  }
+}
+
+function setChips(group, containerId, values) {
+  chipState[group] = [...values];
+  document.querySelectorAll(`#${containerId} .chip`).forEach(c => {
+    c.classList.toggle('selected', values.includes(c.dataset.val));
+  });
+}
+
+/* ===================== PERIOD/EXERCISE TOGGLES ===================== */
+
+function togglePeriod() {
+  const active = document.getElementById('period-active').checked;
+  document.getElementById('period-label').textContent = active ? 'Period is active' : 'Period not active';
+  document.getElementById('flow-section').style.display = active ? 'block' : 'none';
+}
+
+function toggleExercise() {
+  const active = document.getElementById('exercise-active').checked;
+  document.getElementById('exercise-details').style.display = active ? 'block' : 'none';
+}
+
+function selectFlow(el) {
+  document.querySelectorAll('.flow-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function getSelectedFlow() {
+  const el = document.querySelector('.flow-opt.selected');
+  return el ? el.dataset.flow : null;
+}
+
+/* ===================== DATE HELPERS ===================== */
+
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function formatDateDisplay(dateStr) {
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m-1, d);
+  return date.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+}
+
+function shiftLogDate(delta) {
+  const input = document.getElementById('log-date');
+  const [y,m,d] = input.value.split('-').map(Number);
+  const date = new Date(y, m-1, d + delta);
+  input.value = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  loadLogForm();
+}
+
+function setLogDateToday() {
+  document.getElementById('log-date').value = todayString();
+  loadLogForm();
+}
+
+/* ===================== CYCLE LOGIC ===================== */
+
+function getCurrentCycleDay(cycleDates) {
+  if (!cycleDates || cycleDates.length === 0) return null;
+  const sorted = [...cycleDates].sort().reverse();
+  const lastStart = sorted[0];
+  const [y,m,d] = lastStart.split('-').map(Number);
+  const startDate = new Date(y, m-1, d);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diffMs = today - startDate;
+  const day = Math.floor(diffMs / 86400000) + 1;
+  return day > 0 ? day : null;
+}
+
+function getAverageCycleLength(cycleDates) {
+  if (!cycleDates || cycleDates.length < 2) return null;
+  const sorted = [...cycleDates].sort();
+  const lengths = [];
+  for (let i = 1; i < sorted.length; i++) {
+    const [y1,m1,d1] = sorted[i-1].split('-').map(Number);
+    const [y2,m2,d2] = sorted[i].split('-').map(Number);
+    const diff = (new Date(y2,m2-1,d2) - new Date(y1,m1-1,d1)) / 86400000;
+    if (diff > 15 && diff < 50) lengths.push(diff);
+  }
+  if (lengths.length === 0) return null;
+  return Math.round(lengths.reduce((a,b)=>a+b,0)/lengths.length);
+}
+
+function getCyclePhase(cycleDay, avgLength) {
+  const len = avgLength || 28;
+  if (!cycleDay) return null;
+  if (cycleDay <= 5) return 'menstrual';
+  if (cycleDay <= Math.round(len * 0.45)) return 'follicular';
+  if (cycleDay <= Math.round(len * 0.55)) return 'ovulatory';
+  return 'luteal';
+}
+
+const PHASE_INFO = {
+  menstrual: { label: 'Menstrual Phase', icon: '🩸', desc: 'Rest and restore. Hormones are low — be gentle with yourself.', color: '#fff1f2', textColor: '#be185d' },
+  follicular: { label: 'Follicular Phase', icon: '🌱', desc: 'Energy rising! Great time for creativity, new projects, and social activities.', color: '#f0fdf4', textColor: '#16a34a' },
+  ovulatory: { label: 'Ovulatory Phase', icon: '✨', desc: 'Peak energy and confidence. You\'re at your most social and magnetic.', color: '#fffbeb', textColor: '#d97706' },
+  luteal: { label: 'Luteal Phase', icon: '🌙', desc: 'Wind down and reflect. Honor the need for quieter activities.', color: '#f5f3ff', textColor: '#7c3aed' }
+};
+
+/* ===================== TAB SWITCHING ===================== */
+
+let calendarMonth = null, calendarYear = null;
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (tab === 'history') renderHistory();
+  if (tab === 'insights') renderInsights();
+  if (tab === 'data') renderDataTab();
+}
+
+/* ===================== LOG FORM ===================== */
+
+function loadLogForm() {
+  const date = document.getElementById('log-date').value;
+  const data = loadData();
+  const entry = data.entries[date] || getEntryDefaults();
+
+  document.getElementById('period-active').checked = entry.period.active;
+  document.getElementById('period-label').textContent = entry.period.active ? 'Period is active' : 'Period not active';
+  document.getElementById('flow-section').style.display = entry.period.active ? 'block' : 'none';
+  document.querySelectorAll('.flow-opt').forEach(o => {
+    o.classList.toggle('selected', o.dataset.flow === entry.period.flow);
+  });
+
+  setChips('symptoms', 'symptom-chips', entry.symptoms || []);
+
+  document.getElementById('mood-score').value = entry.mood.score;
+  document.getElementById('mood-val').textContent = entry.mood.score;
+  document.getElementById('energy-score').value = entry.mood.energy;
+  document.getElementById('energy-val').textContent = entry.mood.energy;
+  setChips('emotions', 'emotion-chips', entry.mood.emotions || []);
+
+  document.getElementById('food-notes').value = entry.food.notes || '';
+  setChips('cravings', 'craving-chips', entry.food.cravings || []);
+  counters.water = entry.food.water || 0;
+  counters.caffeine = entry.food.caffeine || 0;
+  counters.alcohol = entry.food.alcohol || 0;
+  document.getElementById('water-val').textContent = counters.water;
+  document.getElementById('caffeine-val').textContent = counters.caffeine;
+  document.getElementById('alcohol-val').textContent = counters.alcohol;
+
+  document.getElementById('sleep-hours').value = entry.sleep.hours;
+  document.getElementById('sleep-hours-val').textContent = entry.sleep.hours + 'h';
+  document.getElementById('sleep-quality').value = entry.sleep.quality;
+  document.getElementById('sleep-quality-val').textContent = entry.sleep.quality;
+  document.getElementById('sleep-notes').value = entry.sleep.notes || '';
+
+  document.getElementById('exercise-active').checked = entry.exercise.active;
+  document.getElementById('exercise-details').style.display = entry.exercise.active ? 'block' : 'none';
+  document.getElementById('exercise-type').value = entry.exercise.type || '';
+  document.getElementById('exercise-duration').value = entry.exercise.duration || '';
+  document.getElementById('exercise-intensity').value = entry.exercise.intensity || 'moderate';
+
+  document.getElementById('general-notes').value = entry.notes || '';
+}
+
+function saveEntry() {
+  const date = document.getElementById('log-date').value;
+  const data = loadData();
+  const periodActive = document.getElementById('period-active').checked;
+
+  const entry = {
+    period: { active: periodActive, flow: periodActive ? getSelectedFlow() : null },
+    symptoms: [...chipState.symptoms],
+    mood: {
+      score: parseInt(document.getElementById('mood-score').value),
+      energy: parseInt(document.getElementById('energy-score').value),
+      emotions: [...chipState.emotions]
+    },
+    food: {
+      notes: document.getElementById('food-notes').value.trim(),
+      cravings: [...chipState.cravings],
+      water: counters.water, caffeine: counters.caffeine, alcohol: counters.alcohol
+    },
+    sleep: {
+      hours: parseFloat(document.getElementById('sleep-hours').value),
+      quality: parseInt(document.getElementById('sleep-quality').value),
+      notes: document.getElementById('sleep-notes').value.trim()
+    },
+    exercise: {
+      active: document.getElementById('exercise-active').checked,
+      type: document.getElementById('exercise-type').value.trim(),
+      duration: parseInt(document.getElementById('exercise-duration').value) || 0,
+      intensity: document.getElementById('exercise-intensity').value
+    },
+    notes: document.getElementById('general-notes').value.trim()
+  };
+
+  data.entries[date] = entry;
+
+  if (periodActive) {
+    if (!data.cycleDates.includes(date)) {
+      const prev = data.entries[getPrevDate(date)];
+      if (!prev || !prev.period || !prev.period.active) data.cycleDates.push(date);
+    }
+  } else {
+    data.cycleDates = data.cycleDates.filter(d => d !== date);
+  }
+
+  saveDataStore(data);
+  updateCycleBadge();
+  showToast('✓ Entry saved for ' + formatDateDisplay(date));
+}
+
+function getPrevDate(dateStr) {
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const prev = new Date(y, m-1, d-1);
+  return `${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}-${String(prev.getDate()).padStart(2,'0')}`;
+}
+
+/* ===================== CYCLE BADGE ===================== */
+
+function updateCycleBadge() {
+  const data = loadData();
+  const cycleDay = getCurrentCycleDay(data.cycleDates);
+  const badge = document.getElementById('cycle-badge');
+  badge.textContent = cycleDay ? `Day ${cycleDay} of cycle` : 'No cycle logged yet';
+}
+
+/* ===================== HISTORY TAB ===================== */
+
+function renderHistory() {
+  const now = new Date();
+  if (!calendarMonth) { calendarMonth = now.getMonth(); calendarYear = now.getFullYear(); }
+  renderCalendar(calendarYear, calendarMonth);
+  renderHistoryList();
+}
+
+function renderCalendar(year, month) {
+  const data = loadData();
+  const today = todayString();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  let html = `<div class="cal-header">
+    <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+    <div class="cal-title">${monthNames[month]} ${year}</div>
+    <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+  </div><div class="cal-grid">`;
+
+  dayNames.forEach(d => { html += `<div class="cal-day-label">${d}</div>`; });
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-day empty"></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entry = data.entries[dateStr];
+    const isToday = dateStr === today;
+    const isPeriod = entry && entry.period && entry.period.active;
+    const hasEntry = !!entry;
+    let classes = 'cal-day';
+    if (isToday) classes += ' today';
+    if (isPeriod) classes += ' period-day';
+    else if (hasEntry) classes += ' has-entry';
+    html += `<div class="${classes}" onclick="openEntryModal('${dateStr}')">${d}${hasEntry && !isPeriod ? '<div class="cal-dot"></div>' : ''}</div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('calendar').innerHTML = html;
+}
+
+function calNav(dir) {
+  calendarMonth += dir;
+  if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  renderCalendar(calendarYear, calendarMonth);
+}
+
+function renderHistoryList() {
+  const data = loadData();
+  const dates = Object.keys(data.entries).sort().reverse().slice(0, 30);
+  const container = document.getElementById('history-list');
+
+  if (dates.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="e-icon">📅</div><p>No entries yet</p><small>Start logging from the Log Today tab</small></div>`;
+    return;
+  }
+
+  let html = `<div style="font-size:13px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Recent entries</div>`;
+  dates.forEach(date => {
+    const e = data.entries[date];
+    if (!e) return;
+    const tags = [];
+    if (e.period && e.period.active) tags.push(`<span class="tag period">🩸 Period</span>`);
+    const mood = e.mood && e.mood.score;
+    if (mood) {
+      const cls = mood >= 7 ? 'good' : mood >= 4 ? 'ok' : 'low';
+      const emoji = mood >= 7 ? '😊' : mood >= 4 ? '😐' : '😞';
+      tags.push(`<span class="tag ${cls}">${emoji} Mood ${mood}/10</span>`);
+    }
+    if (e.sleep && e.sleep.hours) tags.push(`<span class="tag">😴 ${e.sleep.hours}h sleep</span>`);
+    if (e.exercise && e.exercise.active) tags.push(`<span class="tag">🏃 Exercised</span>`);
+    const snippets = [];
+    if (e.symptoms && e.symptoms.length) snippets.push(e.symptoms.slice(0,2).join(', '));
+    if (e.mood && e.mood.emotions && e.mood.emotions.length) snippets.push(e.mood.emotions.slice(0,2).join(', '));
+    html += `<div class="entry-item" onclick="openEntryModal('${date}')">
+      <div class="entry-top"><span class="entry-date">${formatDateDisplay(date)}</span><div class="entry-tags">${tags.join('')}</div></div>
+      ${snippets.length ? `<div class="entry-summary">${snippets.join(' · ')}</div>` : ''}
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+/* ===================== ENTRY MODAL ===================== */
+
+function openEntryModal(date) {
+  const data = loadData();
+  const e = data.entries[date];
+  if (!e) { showToast('No entry for this date'); return; }
+  const flowLabels = { spotting:'Spotting', light:'Light', medium:'Medium', heavy:'Heavy', very_heavy:'Very heavy' };
+
+  let html = `<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <div class="modal-header"><div class="modal-title">${formatDateDisplay(date)}</div><button class="modal-close" onclick="closeModal()">✕</button></div>`;
+
+  if (e.period && e.period.active) html += `<div class="modal-section"><div class="modal-section-title">Period</div>
+    <div class="modal-row"><span class="modal-row-label">Active</span><span class="modal-row-val">Yes${e.period.flow ? ' — ' + flowLabels[e.period.flow] : ''}</span></div></div>`;
+  if (e.symptoms && e.symptoms.length) html += `<div class="modal-section"><div class="modal-section-title">Symptoms</div>
+    <div class="modal-row"><span class="modal-row-label">Symptoms</span><span class="modal-row-val">${e.symptoms.join(', ')}</span></div></div>`;
+  if (e.mood) html += `<div class="modal-section"><div class="modal-section-title">Mood & Energy</div>
+    <div class="modal-row"><span class="modal-row-label">Mood</span><span class="modal-row-val">${e.mood.score}/10</span></div>
+    <div class="modal-row"><span class="modal-row-label">Energy</span><span class="modal-row-val">${e.mood.energy}/10</span></div>
+    ${e.mood.emotions && e.mood.emotions.length ? `<div class="modal-row"><span class="modal-row-label">Emotions</span><span class="modal-row-val">${e.mood.emotions.join(', ')}</span></div>` : ''}</div>`;
+  if (e.food) html += `<div class="modal-section"><div class="modal-section-title">Food & Cravings</div>
+    ${e.food.notes ? `<div class="modal-row"><span class="modal-row-label">Food</span><span class="modal-row-val">${e.food.notes}</span></div>` : ''}
+    ${e.food.cravings && e.food.cravings.length ? `<div class="modal-row"><span class="modal-row-label">Cravings</span><span class="modal-row-val">${e.food.cravings.join(', ')}</span></div>` : ''}
+    <div class="modal-row"><span class="modal-row-label">Water / Caffeine</span><span class="modal-row-val">${e.food.water} glasses / ${e.food.caffeine} cups</span></div></div>`;
+  if (e.sleep) html += `<div class="modal-section"><div class="modal-section-title">Sleep</div>
+    <div class="modal-row"><span class="modal-row-label">Hours / Quality</span><span class="modal-row-val">${e.sleep.hours}h / ${e.sleep.quality}/5</span></div>
+    ${e.sleep.notes ? `<div class="modal-row"><span class="modal-row-label">Notes</span><span class="modal-row-val">${e.sleep.notes}</span></div>` : ''}</div>`;
+  if (e.exercise && e.exercise.active) html += `<div class="modal-section"><div class="modal-section-title">Exercise</div>
+    <div class="modal-row"><span class="modal-row-label">Activity</span><span class="modal-row-val">${e.exercise.type || '—'} ${e.exercise.duration ? e.exercise.duration+'min' : ''} (${e.exercise.intensity})</span></div></div>`;
+  if (e.notes) html += `<div class="modal-section"><div class="modal-section-title">Notes</div><div style="font-size:14px;color:#374151;line-height:1.5">${e.notes}</div></div>`;
+
+  html += `<div style="margin-top:20px;display:flex;gap:10px">
+    <button class="btn-secondary" onclick="goEditEntry('${date}')" style="flex:1">Edit</button>
+    <button class="btn-danger" onclick="deleteEntry('${date}')" style="flex:1">Delete</button>
+  </div></div></div>`;
+
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function closeModal() { document.getElementById('modal-container').innerHTML = ''; }
+
+function goEditEntry(date) {
+  closeModal();
+  document.getElementById('log-date').value = date;
+  loadLogForm();
+  switchTabDirect('log');
+}
+
+function deleteEntry(date) {
+  if (!confirm('Delete entry for ' + formatDateDisplay(date) + '?')) return;
+  const data = loadData();
+  delete data.entries[date];
+  data.cycleDates = data.cycleDates.filter(d => d !== date);
+  saveDataStore(data);
+  closeModal();
+  updateCycleBadge();
+  renderHistory();
+  showToast('Entry deleted');
+}
+
+function switchTabDirect(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.nav button')[0].classList.add('active');
+}
+
+/* ===================== INSIGHTS TAB ===================== */
+
+function renderInsights() {
+  const data = loadData();
+  const entries = data.entries;
+  const dates = Object.keys(entries).sort();
+
+  if (dates.length < 3) {
+    document.getElementById('stats-grid').innerHTML = '';
+    document.getElementById('phase-banner').innerHTML = `<div class="empty" style="padding:24px"><div class="e-icon">📊</div><p>Log at least 3 days to see insights</p></div>`;
+    return;
+  }
+
+  const cycleDay = getCurrentCycleDay(data.cycleDates);
+  const avgLen = getAverageCycleLength(data.cycleDates);
+  const phase = getCyclePhase(cycleDay, avgLen);
+
+  if (phase && PHASE_INFO[phase]) {
+    const p = PHASE_INFO[phase];
+    document.getElementById('phase-banner').innerHTML = `<div class="phase-banner" style="background:${p.color};color:${p.textColor}">
+      <div class="phase-icon">${p.icon}</div>
+      <div><div class="phase-name">${p.label}${cycleDay ? ` — Day ${cycleDay}` : ''}</div><div class="phase-desc">${p.desc}</div></div>
+    </div>`;
+  }
+
+  const totalEntries = dates.length;
+  const periodDays = dates.filter(d => entries[d].period && entries[d].period.active).length;
+  const avgMood = dates.reduce((s,d) => s + (entries[d].mood ? entries[d].mood.score : 0), 0) / totalEntries;
+  const sleepDates = dates.filter(d => entries[d].sleep && entries[d].sleep.hours);
+  const avgSleep = sleepDates.length ? sleepDates.reduce((s,d) => s + entries[d].sleep.hours, 0) / sleepDates.length : 0;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-box"><div class="stat-val">${totalEntries}</div><div class="stat-label">Days logged</div></div>
+    <div class="stat-box"><div class="stat-val">${periodDays}</div><div class="stat-label">Period days</div></div>
+    <div class="stat-box"><div class="stat-val">${avgLen || '—'}</div><div class="stat-label">Avg cycle length</div></div>
+    <div class="stat-box"><div class="stat-val">${avgMood.toFixed(1)}</div><div class="stat-label">Avg mood</div></div>
+    <div class="stat-box"><div class="stat-val">${avgSleep.toFixed(1)}h</div><div class="stat-label">Avg sleep</div></div>
+    <div class="stat-box"><div class="stat-val">${data.cycleDates ? data.cycleDates.length : 0}</div><div class="stat-label">Cycles tracked</div></div>`;
+
+  const last60 = dates.filter(d => {
+    const [y,m,day] = d.split('-').map(Number);
+    const date = new Date(y,m-1,day);
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60);
+    return date >= cutoff;
+  });
+
+  if (window._moodChart) { window._moodChart.destroy(); window._moodChart = null; }
+  window._moodChart = new Chart(document.getElementById('chart-mood').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: last60.map(d => { const [,m,day] = d.split('-'); return `${parseInt(m)}/${parseInt(day)}`; }),
+      datasets: [
+        { label: 'Mood', data: last60.map(d => entries[d].mood ? entries[d].mood.score : null), borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.08)', tension: 0.4, pointRadius: 3, fill: true },
+        { label: 'Energy', data: last60.map(d => entries[d].mood ? entries[d].mood.energy : null), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.06)', tension: 0.4, pointRadius: 3, fill: true }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { min: 1, max: 10 }, x: { ticks: { maxTicksLimit: 10 } } } }
+  });
+
+  const symptomCounts = {};
+  dates.forEach(d => { (entries[d].symptoms || []).forEach(s => { symptomCounts[s] = (symptomCounts[s] || 0) + 1; }); });
+  const sortedSymptoms = Object.entries(symptomCounts).sort((a,b) => b[1]-a[1]).slice(0,8);
+
+  if (window._sympChart) { window._sympChart.destroy(); window._sympChart = null; }
+  window._sympChart = new Chart(document.getElementById('chart-symptoms').getContext('2d'), {
+    type: 'bar',
+    data: { labels: sortedSymptoms.map(s => s[0].replace('_',' ')), datasets: [{ label: 'Times', data: sortedSymptoms.map(s => s[1]), backgroundColor: '#818cf8', borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { precision: 0 } } } }
+  });
+
+  const sleepMoodPoints = dates.filter(d => entries[d].sleep && entries[d].sleep.hours && entries[d].mood)
+    .map(d => ({ x: entries[d].sleep.hours, y: entries[d].mood.score }));
+
+  if (window._sleepChart) { window._sleepChart.destroy(); window._sleepChart = null; }
+  window._sleepChart = new Chart(document.getElementById('chart-sleep').getContext('2d'), {
+    type: 'scatter',
+    data: { datasets: [{ label: 'Sleep vs Mood', data: sleepMoodPoints, backgroundColor: 'rgba(99,102,241,0.5)', pointRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Sleep Hours' }, min: 2, max: 12 }, y: { title: { display: true, text: 'Mood' }, min: 1, max: 10 } } }
+  });
+
+  const periodCravings = {};
+  dates.filter(d => entries[d].period && entries[d].period.active).forEach(d => {
+    (entries[d].food && entries[d].food.cravings || []).forEach(c => { periodCravings[c] = (periodCravings[c]||0)+1; });
+  });
+  const sortedCravings = Object.entries(periodCravings).sort((a,b)=>b[1]-a[1]);
+  const maxC = sortedCravings[0] ? sortedCravings[0][1] : 1;
+  const cravEmojis = { chocolate:'🍫', salty:'🧂', sweet:'🍬', carbs:'🍞', fatty:'🍟', spicy:'🌶️', comfort:'🍲', fruit:'🍓' };
+  document.getElementById('craving-insights').innerHTML = sortedCravings.length
+    ? sortedCravings.map(([c,n]) => `<div class="corr-item"><span class="corr-label">${cravEmojis[c]||''} ${c}</span><div class="corr-bar-bg"><div class="corr-bar" style="width:${Math.round(n/maxC*100)}%"></div></div><span class="corr-score">${n}x</span></div>`).join('')
+    : '<div style="font-size:13px;color:#94a3b8;padding:8px 0">No period cravings logged yet</div>';
+
+  const correlations = computeCorrelations(dates, entries);
+  document.getElementById('correlation-list').innerHTML = correlations.map(c => `
+    <div class="corr-item">
+      <span class="corr-label">${c.label}</span>
+      <div class="corr-bar-bg"><div class="corr-bar" style="width:${Math.abs(c.score)*100}%;background:${c.score < 0 ? '#f87171' : 'linear-gradient(90deg,#818cf8,#6366f1)'}"></div></div>
+      <span class="corr-score" style="color:${c.score < 0 ? '#ef4444' : '#6366f1'}">${c.label2}</span>
+    </div>`).join('');
+}
+
+function computeCorrelations(dates, entries) {
+  const results = [];
+  const pairs = [
+    ['Sleep quality → Mood', d => [entries[d].sleep && entries[d].sleep.quality, entries[d].mood && entries[d].mood.score]],
+    ['Exercise → Energy', d => [entries[d].exercise && (entries[d].exercise.active ? 1 : 0), entries[d].mood && entries[d].mood.energy]],
+    ['Caffeine → Mood', d => [entries[d].food && entries[d].food.caffeine, entries[d].mood && entries[d].mood.score]],
+    ['Hydration → Energy', d => [entries[d].food && entries[d].food.water, entries[d].mood && entries[d].mood.energy]],
+    ['Sleep hours → Mood', d => [entries[d].sleep && entries[d].sleep.hours, entries[d].mood && entries[d].mood.score]]
+  ];
+  pairs.forEach(([label, fn]) => {
+    const pts = dates.map(fn).filter(([a,b]) => a != null && b != null);
+    if (pts.length >= 5) {
+      const r = pearson(pts.map(p=>p[0]), pts.map(p=>p[1]));
+      results.push({ label, score: r, label2: (r >= 0 ? '+' : '') + r.toFixed(2) });
+    }
+  });
+  return results.sort((a,b) => Math.abs(b.score) - Math.abs(a.score));
+}
+
+function pearson(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return 0;
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  const num = xs.reduce((s,x,i) => s + (x-mx)*(ys[i]-my), 0);
+  const dx = Math.sqrt(xs.reduce((s,x)=>s+(x-mx)**2,0));
+  const dy = Math.sqrt(ys.reduce((s,y)=>s+(y-my)**2,0));
+  if (dx===0||dy===0) return 0;
+  return parseFloat((num/(dx*dy)).toFixed(2));
+}
+
+/* ===================== DATA TAB ===================== */
+
+function renderDataTab() {
+  const data = loadData();
+  const dates = Object.keys(data.entries).sort();
+  const total = dates.length;
+  const periodDays = dates.filter(d => data.entries[d].period && data.entries[d].period.active).length;
+  document.getElementById('data-summary-content').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="modal-row"><span class="modal-row-label">Total entries</span><span class="modal-row-val">${total} days</span></div>
+      <div class="modal-row"><span class="modal-row-label">Date range</span><span class="modal-row-val">${total ? formatDateDisplay(dates[0]) + ' → ' + formatDateDisplay(dates[dates.length-1]) : '—'}</span></div>
+      <div class="modal-row"><span class="modal-row-label">Period days logged</span><span class="modal-row-val">${periodDays}</span></div>
+      <div class="modal-row"><span class="modal-row-label">Cycles tracked</span><span class="modal-row-val">${data.cycleDates ? data.cycleDates.length : 0}</span></div>
+      <div class="modal-row" style="border-bottom:none"><span class="modal-row-label">Storage used</span><span class="modal-row-val">${(JSON.stringify(data).length/1024).toFixed(1)} KB</span></div>
+    </div>`;
+}
+
+function exportJSON() {
+  const data = loadData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `cycle-tracker-backup-${todayString()}.json`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ JSON backup exported');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.entries) throw new Error('Invalid format');
+      if (!confirm(`Import ${Object.keys(data.entries).length} entries? This will REPLACE your current data.`)) return;
+      saveDataStore(data); updateCycleBadge(); renderDataTab();
+      showToast('✓ Data imported successfully');
+    } catch (err) { showToast('⚠ Invalid backup file'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function exportCSV() {
+  const data = loadData();
+  const dates = Object.keys(data.entries).sort();
+  if (!dates.length) { showToast('No data to export'); return; }
+  const headers = ['date','period_active','period_flow','symptoms','mood_score','energy_score','emotions','food_notes','cravings','water_glasses','caffeine_cups','alcohol_drinks','sleep_hours','sleep_quality','sleep_notes','exercise_active','exercise_type','exercise_duration_min','exercise_intensity','notes'];
+  const rows = dates.map(date => {
+    const e = data.entries[date];
+    return [date, e.period.active?'yes':'no', e.period.flow||'', (e.symptoms||[]).join('; '), e.mood.score, e.mood.energy, (e.mood.emotions||[]).join('; '),
+      (e.food.notes||'').replace(/,/g,' '), (e.food.cravings||[]).join('; '), e.food.water, e.food.caffeine, e.food.alcohol,
+      e.sleep.hours, e.sleep.quality, (e.sleep.notes||'').replace(/,/g,' '),
+      e.exercise.active?'yes':'no', (e.exercise.type||'').replace(/,/g,' '), e.exercise.duration||0, e.exercise.intensity||'',
+      (e.notes||'').replace(/,/g,' ')].map(v=>`"${v}"`).join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `cycle-tracker-${todayString()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ CSV exported');
+}
+
+function clearAllData() {
+  if (!confirm('Delete ALL entries permanently? This cannot be undone.')) return;
+  if (!confirm('Are you sure? All your cycle data will be lost.')) return;
+  localStorage.removeItem(STORAGE_KEY); updateCycleBadge(); renderDataTab();
+  showToast('All data deleted');
+}
+
+/* ===================== TOAST ===================== */
+
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ===================== INIT ===================== */
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('log-date').value = todayString();
+  loadLogForm();
+  updateCycleBadge();
+});
+</script>
+</body>
+</html>
