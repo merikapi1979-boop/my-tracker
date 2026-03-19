@@ -129,6 +129,12 @@
     .stat-val { font-size: 30px; font-weight: 700; color: #6366f1; line-height: 1; }
     .stat-label { font-size: 12px; color: #64748b; margin-top: 5px; font-weight: 500; }
 
+    /* Countdown banner */
+    .countdown-banner { border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; display: flex; align-items: center; gap: 16px; }
+    .countdown-number { font-size: 42px; font-weight: 800; line-height: 1; min-width: 60px; text-align: center; }
+    .countdown-label { font-size: 16px; font-weight: 700; }
+    .countdown-sub { font-size: 13px; margin-top: 4px; opacity: 0.75; }
+
     /* Phase banner */
     .phase-banner { border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 14px; }
     .phase-icon { font-size: 30px; }
@@ -206,6 +212,7 @@
 
   <!-- LOG TAB -->
   <div id="tab-log" class="tab-content active">
+    <div id="countdown-banner"></div>
     <div class="date-nav">
       <button class="date-nav-btn" onclick="shiftLogDate(-1)">‹</button>
       <input type="date" id="log-date" onchange="loadLogForm()" />
@@ -733,6 +740,63 @@ function updateCycleBadge() {
   const cycleDay = getCurrentCycleDay(data.cycleDates);
   const badge = document.getElementById('cycle-badge');
   badge.textContent = cycleDay ? `Day ${cycleDay} of cycle` : 'No cycle logged yet';
+  renderCountdown(data);
+}
+
+/* ===================== PERIOD COUNTDOWN ===================== */
+
+function renderCountdown(data) {
+  const el = document.getElementById('countdown-banner');
+  if (!el) return;
+
+  const cycleDates = data ? data.cycleDates : [];
+  const avgLen = getAverageCycleLength(cycleDates) || 28;
+
+  if (!cycleDates || cycleDates.length === 0) {
+    el.innerHTML = `<div class="countdown-banner" style="background:#f1f5f9;color:#64748b">
+      <div class="countdown-number">?</div>
+      <div><div class="countdown-label">Period countdown</div>
+      <div class="countdown-sub">Log your first period to start tracking</div></div>
+    </div>`;
+    return;
+  }
+
+  const lastStart = [...cycleDates].sort().reverse()[0];
+  const [y,m,d] = lastStart.split('-').map(Number);
+  const lastDate = new Date(y, m-1, d);
+  const expectedDate = new Date(lastDate);
+  expectedDate.setDate(expectedDate.getDate() + avgLen);
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  expectedDate.setHours(0,0,0,0);
+
+  const daysLeft = Math.round((expectedDate - today) / 86400000);
+  const expectedStr = expectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  const basedOn = cycleDates.length >= 2 ? `Based on your ${avgLen}-day average cycle` : `Based on a 28-day default cycle`;
+
+  let bg, color, icon, label;
+  if (daysLeft < 0) {
+    bg = '#fff1f2'; color = '#be185d'; icon = '🩸';
+    label = `Period is ${Math.abs(daysLeft)} day${Math.abs(daysLeft)!==1?'s':''} late`;
+  } else if (daysLeft === 0) {
+    bg = '#fff1f2'; color = '#be185d'; icon = '🩸';
+    label = 'Period expected today';
+  } else if (daysLeft <= 3) {
+    bg = '#fff7ed'; color = '#c2410c'; icon = '⚠️';
+    label = `Period in ${daysLeft} day${daysLeft!==1?'s':''}`;
+  } else {
+    bg = '#f0fdf4'; color = '#16a34a'; icon = '📅';
+    label = `Days until next period`;
+  }
+
+  el.innerHTML = `<div class="countdown-banner" style="background:${bg};color:${color}">
+    <div class="countdown-number">${daysLeft < 0 ? '!' : daysLeft}</div>
+    <div>
+      <div class="countdown-label">${icon} ${label}</div>
+      <div class="countdown-sub">Expected ${expectedStr} · ${basedOn}</div>
+    </div>
+  </div>`;
 }
 
 /* ===================== HISTORY TAB ===================== */
@@ -1102,6 +1166,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('log-date').value = todayString();
   loadLogForm();
   updateCycleBadge();
+  renderCountdown(loadData());
 });
 </script>
 </body>
