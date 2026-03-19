@@ -253,6 +253,8 @@
         <div class="chip" data-val="clots" onclick="toggleChip(this,'symptoms')">Clots</div>
         <div class="chip" data-val="dizziness" onclick="toggleChip(this,'symptoms')">Dizziness</div>
         <div class="chip" data-val="discharge" onclick="toggleChip(this,'symptoms')">Discharge</div>
+        <div class="chip" data-val="weak" onclick="toggleChip(this,'symptoms')">Weak</div>
+        <div class="chip" data-val="tender_abdomen" onclick="toggleChip(this,'symptoms')">Tender abdomen</div>
       </div>
     </div>
 
@@ -287,13 +289,13 @@
           <div class="chip" data-val="motivated" onclick="toggleChip(this,'emotions')">Motivated</div>
           <div class="chip" data-val="anxious" onclick="toggleChip(this,'emotions')">Anxious</div>
           <div class="chip" data-val="irritable" onclick="toggleChip(this,'emotions')">Irritable</div>
-          <div class="chip" data-val="emotional" onclick="toggleChip(this,'emotions')">Emotional</div>
           <div class="chip" data-val="sad" onclick="toggleChip(this,'emotions')">Sad</div>
           <div class="chip" data-val="foggy" onclick="toggleChip(this,'emotions')">Brain fog</div>
-          <div class="chip" data-val="hopeful" onclick="toggleChip(this,'emotions')">Hopeful</div>
-          <div class="chip" data-val="depressed" onclick="toggleChip(this,'emotions')">Depressed</div>
           <div class="chip" data-val="confident" onclick="toggleChip(this,'emotions')">Confident</div>
           <div class="chip" data-val="overwhelmed" onclick="toggleChip(this,'emotions')">Overwhelmed</div>
+          <div class="chip" data-val="creative" onclick="toggleChip(this,'emotions')">Creative</div>
+          <div class="chip" data-val="energizer_bunny" onclick="toggleChip(this,'emotions')">Energizer bunny</div>
+          <div class="chip" data-val="dreamy" onclick="toggleChip(this,'emotions')">Dreamy</div>
         </div>
       </div>
     </div>
@@ -338,15 +340,6 @@
           </div>
         </div>
       </div>
-      <div class="form-group" style="margin-top:16px; margin-bottom:0">
-        <div class="form-label">Alcohol (drinks)</div>
-        <div class="counter-row">
-          <button class="counter-btn" onclick="adjust('alcohol',-1)">−</button>
-          <span class="counter-val" id="alcohol-val">0</span>
-          <button class="counter-btn" onclick="adjust('alcohol',1)">+</button>
-          <span class="counter-unit">drinks</span>
-        </div>
-      </div>
     </div>
 
     <!-- Sleep -->
@@ -381,34 +374,11 @@
     <!-- Exercise -->
     <div class="card">
       <div class="card-title"><span class="icon">🏃</span> Exercise</div>
-      <div class="form-group">
-        <div class="toggle-row">
-          <label class="toggle">
-            <input type="checkbox" id="exercise-active" onchange="toggleExercise()" />
-            <span class="toggle-slider"></span>
-          </label>
-          <span class="toggle-label">I exercised today</span>
-        </div>
-      </div>
-      <div id="exercise-details" style="display:none">
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Type of exercise</label>
-            <input type="text" class="form-input" id="exercise-type" placeholder="e.g. yoga, running, gym..." />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Duration (minutes)</label>
-            <input type="number" class="form-input" id="exercise-duration" placeholder="30" min="0" />
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label class="form-label">Intensity</label>
-          <select class="form-input" id="exercise-intensity">
-            <option value="light">Light</option>
-            <option value="moderate" selected>Moderate</option>
-            <option value="intense">Intense</option>
-          </select>
-        </div>
+      <div class="chips" id="exercise-chips">
+        <div class="chip" data-val="squats" onclick="toggleChip(this,'exercise')">Squats</div>
+        <div class="chip" data-val="yoga" onclick="toggleChip(this,'exercise')">Yoga</div>
+        <div class="chip" data-val="walk" onclick="toggleChip(this,'exercise')">Walk</div>
+        <div class="chip" data-val="arm_swings" onclick="toggleChip(this,'exercise')">Arm swings</div>
       </div>
     </div>
 
@@ -520,14 +490,14 @@ function getEntryDefaults() {
     mood: { score: 5, energy: 5, emotions: [] },
     food: { notes: '', cravings: [], water: 0, caffeine: 0, alcohol: 0 },
     sleep: { hours: 7, quality: 3, notes: '' },
-    exercise: { active: false, type: '', duration: 0, intensity: 'moderate' },
+    exercise: { active: false, types: [], duration: 0, intensity: 'moderate' },
     notes: ''
   };
 }
 
 /* ===================== COUNTERS ===================== */
 
-const counters = { water: 0, caffeine: 0, alcohol: 0 };
+const counters = { water: 0, caffeine: 0 };
 
 function adjust(key, delta) {
   counters[key] = Math.max(0, (counters[key] || 0) + delta);
@@ -536,7 +506,7 @@ function adjust(key, delta) {
 
 /* ===================== CHIP HELPERS ===================== */
 
-const chipState = { symptoms: [], emotions: [], cravings: [] };
+const chipState = { symptoms: [], emotions: [], cravings: [], exercise: [] };
 
 function toggleChip(el, group) {
   const val = el.dataset.val;
@@ -565,10 +535,6 @@ function togglePeriod() {
   document.getElementById('flow-section').style.display = active ? 'block' : 'none';
 }
 
-function toggleExercise() {
-  const active = document.getElementById('exercise-active').checked;
-  document.getElementById('exercise-details').style.display = active ? 'block' : 'none';
-}
 
 function selectFlow(el) {
   document.querySelectorAll('.flow-opt').forEach(o => o.classList.remove('selected'));
@@ -691,10 +657,8 @@ function loadLogForm() {
   setChips('cravings', 'craving-chips', entry.food.cravings || []);
   counters.water = entry.food.water || 0;
   counters.caffeine = entry.food.caffeine || 0;
-  counters.alcohol = entry.food.alcohol || 0;
   document.getElementById('water-val').textContent = counters.water;
   document.getElementById('caffeine-val').textContent = counters.caffeine;
-  document.getElementById('alcohol-val').textContent = counters.alcohol;
 
   document.getElementById('sleep-hours').value = entry.sleep.hours;
   document.getElementById('sleep-hours-val').textContent = entry.sleep.hours + 'h';
@@ -702,11 +666,7 @@ function loadLogForm() {
   document.getElementById('sleep-quality-val').textContent = entry.sleep.quality;
   document.getElementById('sleep-notes').value = entry.sleep.notes || '';
 
-  document.getElementById('exercise-active').checked = entry.exercise.active;
-  document.getElementById('exercise-details').style.display = entry.exercise.active ? 'block' : 'none';
-  document.getElementById('exercise-type').value = entry.exercise.type || '';
-  document.getElementById('exercise-duration').value = entry.exercise.duration || '';
-  document.getElementById('exercise-intensity').value = entry.exercise.intensity || 'moderate';
+  setChips('exercise', 'exercise-chips', entry.exercise.types || []);
 
   document.getElementById('general-notes').value = entry.notes || '';
 }
@@ -727,7 +687,7 @@ function saveEntry() {
     food: {
       notes: document.getElementById('food-notes').value.trim(),
       cravings: [...chipState.cravings],
-      water: counters.water, caffeine: counters.caffeine, alcohol: counters.alcohol
+      water: counters.water, caffeine: counters.caffeine
     },
     sleep: {
       hours: parseFloat(document.getElementById('sleep-hours').value),
@@ -735,10 +695,11 @@ function saveEntry() {
       notes: document.getElementById('sleep-notes').value.trim()
     },
     exercise: {
-      active: document.getElementById('exercise-active').checked,
-      type: document.getElementById('exercise-type').value.trim(),
-      duration: parseInt(document.getElementById('exercise-duration').value) || 0,
-      intensity: document.getElementById('exercise-intensity').value
+      active: chipState.exercise.length > 0,
+      types: [...chipState.exercise],
+      type: chipState.exercise.join(', '),
+      duration: 0,
+      intensity: 'moderate'
     },
     notes: document.getElementById('general-notes').value.trim()
   };
@@ -1101,13 +1062,13 @@ function exportCSV() {
   const data = loadData();
   const dates = Object.keys(data.entries).sort();
   if (!dates.length) { showToast('No data to export'); return; }
-  const headers = ['date','period_active','period_flow','symptoms','mood_score','energy_score','emotions','food_notes','cravings','water_glasses','caffeine_cups','alcohol_drinks','sleep_hours','sleep_quality','sleep_notes','exercise_active','exercise_type','exercise_duration_min','exercise_intensity','notes'];
+  const headers = ['date','period_active','period_flow','symptoms','mood_score','energy_score','emotions','food_notes','cravings','water_glasses','caffeine_cups','sleep_hours','sleep_quality','sleep_notes','exercise_types','notes'];
   const rows = dates.map(date => {
     const e = data.entries[date];
     return [date, e.period.active?'yes':'no', e.period.flow||'', (e.symptoms||[]).join('; '), e.mood.score, e.mood.energy, (e.mood.emotions||[]).join('; '),
-      (e.food.notes||'').replace(/,/g,' '), (e.food.cravings||[]).join('; '), e.food.water, e.food.caffeine, e.food.alcohol,
+      (e.food.notes||'').replace(/,/g,' '), (e.food.cravings||[]).join('; '), e.food.water, e.food.caffeine,
       e.sleep.hours, e.sleep.quality, (e.sleep.notes||'').replace(/,/g,' '),
-      e.exercise.active?'yes':'no', (e.exercise.type||'').replace(/,/g,' '), e.exercise.duration||0, e.exercise.intensity||'',
+      (e.exercise.types||[]).join('; '),
       (e.notes||'').replace(/,/g,' ')].map(v=>`"${v}"`).join(',');
   });
   const csv = [headers.join(','), ...rows].join('\n');
