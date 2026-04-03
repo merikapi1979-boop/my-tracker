@@ -7,19 +7,19 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; min-height: 100vh; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #FFFDF5; color: #1C1C1C; min-height: 100vh; }
 
     /* Header */
-    .header { background: white; border-bottom: 1px solid #e2e8f0; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 62px; position: sticky; top: 0; z-index: 100; }
+    .header { background: #4A7C59; border-bottom: 4px solid #D94F35; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
     .header-left { display: flex; align-items: center; gap: 10px; }
-    .header h1 { font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.3px; }
-    .cycle-badge { font-size: 12px; color: #6366f1; background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-weight: 500; }
+    .header h1 { font-size: 19px; font-weight: 800; color: #FFFDF5; letter-spacing: 1px; text-transform: uppercase; }
+    .cycle-badge { font-size: 12px; color: #1C1C1C; background: #F5C842; padding: 5px 12px; border-radius: 20px; font-weight: 700; }
 
     /* Nav */
-    .nav { background: white; border-bottom: 1px solid #e2e8f0; display: flex; padding: 0 24px; overflow-x: auto; }
-    .nav button { padding: 14px 18px; border: none; background: none; cursor: pointer; font-size: 14px; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; white-space: nowrap; font-weight: 500; }
-    .nav button.active { color: #6366f1; border-bottom-color: #6366f1; }
-    .nav button:hover:not(.active) { color: #0f172a; }
+    .nav { background: #3A6147; border-bottom: 3px solid #D94F35; display: flex; padding: 0 20px; overflow-x: auto; }
+    .nav button { padding: 14px 16px; border: none; background: none; cursor: pointer; font-size: 13px; color: #A8C9B2; border-bottom: 3px solid transparent; margin-bottom: -3px; transition: all 0.2s; white-space: nowrap; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .nav button.active { color: #F5C842; border-bottom-color: #F5C842; }
+    .nav button:hover:not(.active) { color: #FFFDF5; }
 
     /* Layout */
     .main { max-width: 780px; margin: 0 auto; padding: 24px 20px 60px; }
@@ -27,15 +27,18 @@
     .tab-content.active { display: block; }
 
     /* Cards */
-    .card { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin-bottom: 14px; }
-    .card-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-    .card-title .icon { font-size: 17px; }
+    .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-top: 5px solid #4A7C59; }
+    .card:nth-child(2n) { border-top-color: #D94F35; }
+    .card:nth-child(3n) { border-top-color: #F5C842; }
+    .card:nth-child(4n) { border-top-color: #5B8FA8; }
+    .card-title { font-size: 13px; font-weight: 800; color: #1C1C1C; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .card-title .icon { font-size: 18px; }
 
     /* Form */
     .form-group { margin-bottom: 18px; }
-    .form-label { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 7px; display: block; }
-    .form-input { width: 100%; padding: 10px 13px; border: 1px solid #d1d5db; border-radius: 9px; font-size: 14px; color: #0f172a; background: white; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit; }
-    .form-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .form-label { font-size: 12px; font-weight: 700; color: #5B6B5B; margin-bottom: 7px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-input { width: 100%; padding: 10px 13px; border: 2px solid #D8E8D8; border-radius: 8px; font-size: 14px; color: #1C1C1C; background: white; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit; }
+    .form-input:focus { outline: none; border-color: #4A7C59; box-shadow: 0 0 0 3px rgba(74,124,89,0.15); }
     textarea.form-input { resize: vertical; min-height: 80px; }
 
     /* Two-col grid */
@@ -46,58 +49,58 @@
     .toggle-row { display: flex; align-items: center; gap: 12px; }
     .toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
     .toggle input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider { position: absolute; inset: 0; background: #d1d5db; border-radius: 26px; cursor: pointer; transition: 0.25s; }
-    .toggle-slider:before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.25s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
-    .toggle input:checked + .toggle-slider { background: #6366f1; }
+    .toggle-slider { position: absolute; inset: 0; background: #C8D8C8; border-radius: 26px; cursor: pointer; transition: 0.25s; }
+    .toggle-slider:before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.25s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .toggle input:checked + .toggle-slider { background: #D94F35; }
     .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
-    .toggle-label { font-size: 14px; color: #374151; }
+    .toggle-label { font-size: 14px; color: #3A3A3A; font-weight: 500; }
 
     /* Flow selector */
     .flow-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
-    .flow-opt { padding: 10px 4px; text-align: center; border: 1.5px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 11px; font-weight: 500; color: #64748b; transition: all 0.2s; background: white; }
-    .flow-opt:hover { border-color: #f43f5e; color: #f43f5e; }
-    .flow-opt.selected { background: #fff1f2; border-color: #f43f5e; color: #be185d; }
+    .flow-opt { padding: 10px 4px; text-align: center; border: 2px solid #F0D0C8; border-radius: 10px; cursor: pointer; font-size: 11px; font-weight: 700; color: #8A5A50; transition: all 0.2s; background: #FFF5F3; text-transform: uppercase; }
+    .flow-opt:hover { border-color: #D94F35; color: #D94F35; background: #FFE8E3; }
+    .flow-opt.selected { background: #D94F35; border-color: #B83D26; color: white; }
     .flow-opt .dot { font-size: 20px; display: block; margin-bottom: 4px; }
 
     /* Chips */
-    .chips { display: flex; flex-wrap: wrap; gap: 7px; }
-    .chip { padding: 7px 13px; border: 1.5px solid #e2e8f0; border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.18s; background: white; color: #374151; user-select: none; }
-    .chip:hover { border-color: #a5b4fc; color: #6366f1; }
-    .chip.selected { background: #eef2ff; border-color: #6366f1; color: #6366f1; font-weight: 500; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { padding: 8px 15px; border: 2px solid #E0E8E0; border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.18s; background: #F5FBF5; color: #3A5A3A; user-select: none; font-weight: 600; }
+    .chip:hover { border-color: #4A7C59; color: #4A7C59; background: #EAF5EA; transform: translateY(-1px); }
+    .chip.selected { background: #4A7C59; border-color: #3A6147; color: white; font-weight: 700; transform: translateY(-1px); box-shadow: 0 2px 6px rgba(74,124,89,0.35); }
 
     /* Slider */
     .slider-group { display: flex; flex-direction: column; gap: 6px; }
     .slider-row { display: flex; align-items: center; gap: 14px; }
-    .slider { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px; background: #e2e8f0; outline: none; cursor: pointer; }
-    .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #6366f1; cursor: pointer; box-shadow: 0 1px 4px rgba(99,102,241,0.4); }
-    .slider-val { width: 34px; text-align: center; font-size: 16px; font-weight: 700; color: #6366f1; }
-    .slider-ends { display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; }
+    .slider { flex: 1; -webkit-appearance: none; appearance: none; height: 7px; border-radius: 4px; background: #E0E8E0; outline: none; cursor: pointer; }
+    .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #4A7C59; cursor: pointer; box-shadow: 0 1px 4px rgba(74,124,89,0.4); }
+    .slider-val { width: 34px; text-align: center; font-size: 16px; font-weight: 700; color: #4A7C59; }
+    .slider-ends { display: flex; justify-content: space-between; font-size: 11px; color: #8A9A8A; }
 
     /* Counter */
     .counter-row { display: flex; align-items: center; gap: 10px; }
-    .counter-btn { width: 34px; height: 34px; border: 1.5px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-size: 17px; display: flex; align-items: center; justify-content: center; transition: all 0.18s; color: #374151; line-height: 1; }
-    .counter-btn:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
-    .counter-val { width: 44px; text-align: center; font-size: 16px; font-weight: 600; color: #0f172a; }
-    .counter-unit { font-size: 13px; color: #64748b; }
+    .counter-btn { width: 36px; height: 36px; border: 2px solid #E0E8E0; border-radius: 8px; background: white; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.18s; color: #3A5A3A; line-height: 1; }
+    .counter-btn:hover { border-color: #4A7C59; color: #4A7C59; background: #EAF5EA; }
+    .counter-val { width: 44px; text-align: center; font-size: 18px; font-weight: 700; color: #1C1C1C; }
+    .counter-unit { font-size: 13px; color: #6A8A6A; }
 
     /* Save button */
-    .btn-primary { background: #6366f1; color: white; border: none; padding: 13px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; width: 100%; font-family: inherit; }
-    .btn-primary:hover { background: #4f46e5; }
-    .btn-primary:active { transform: scale(0.98); }
-    .btn-secondary { background: white; color: #374151; border: 1.5px solid #e2e8f0; padding: 10px 18px; border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.18s; font-family: inherit; }
-    .btn-secondary:hover { border-color: #6366f1; color: #6366f1; }
-    .btn-danger { background: white; color: #ef4444; border: 1.5px solid #fca5a5; padding: 10px 18px; border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.18s; }
-    .btn-danger:hover { background: #fef2f2; }
+    .btn-primary { background: #D94F35; color: white; border: none; padding: 14px 24px; border-radius: 30px; font-size: 15px; font-weight: 800; cursor: pointer; transition: all 0.2s; width: 100%; font-family: inherit; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(217,79,53,0.4); }
+    .btn-primary:hover { background: #C23E26; box-shadow: 0 6px 16px rgba(217,79,53,0.5); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(217,79,53,0.3); }
+    .btn-secondary { background: white; color: #3A5A3A; border: 2px solid #D8E8D8; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.18s; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+    .btn-secondary:hover { border-color: #4A7C59; color: #4A7C59; background: #EAF5EA; }
+    .btn-danger { background: white; color: #D94F35; border: 2px solid #F0D0C8; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.18s; text-transform: uppercase; }
+    .btn-danger:hover { background: #FFF0ED; border-color: #D94F35; }
 
     /* Toast */
-    .toast { position: fixed; bottom: 28px; right: 24px; background: #0f172a; color: white; padding: 13px 20px; border-radius: 10px; font-size: 14px; z-index: 1000; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; max-width: 300px; }
+    .toast { position: fixed; bottom: 28px; right: 24px; background: #4A7C59; color: white; padding: 13px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 1000; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; max-width: 300px; box-shadow: 0 4px 16px rgba(74,124,89,0.4); }
     .toast.show { opacity: 1; transform: translateY(0); }
 
     /* Calendar */
     .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .cal-title { font-size: 16px; font-weight: 600; }
-    .cal-nav-btn { background: white; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 5px 13px; cursor: pointer; font-size: 14px; transition: all 0.18s; }
-    .cal-nav-btn:hover { border-color: #6366f1; color: #6366f1; }
+    .cal-title { font-size: 16px; font-weight: 800; color: #1C1C1C; text-transform: uppercase; letter-spacing: 0.5px; }
+    .cal-nav-btn { background: white; border: 2px solid #D8E8D8; border-radius: 20px; padding: 6px 14px; cursor: pointer; font-size: 13px; transition: all 0.18s; color: #3A5A3A; font-weight: 700; }
+    .cal-nav-btn:hover { border-color: #4A7C59; color: #4A7C59; background: #EAF5EA; }
     .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
     .cal-day-label { text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; padding: 5px 0; }
     .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 13px; cursor: pointer; transition: all 0.18s; position: relative; }
@@ -254,40 +257,18 @@
         <div class="chip" data-val="breast_tenderness" onclick="toggleChip(this,'symptoms')">Breast tenderness</div>
         <div class="chip" data-val="back_pain" onclick="toggleChip(this,'symptoms')">Back pain</div>
         <div class="chip" data-val="nausea" onclick="toggleChip(this,'symptoms')">Nausea</div>
-        <div class="chip" data-val="fatigue" onclick="toggleChip(this,'symptoms')">Fatigue</div>
         <div class="chip" data-val="acne" onclick="toggleChip(this,'symptoms')">Acne</div>
         <div class="chip" data-val="spotting" onclick="toggleChip(this,'symptoms')">Spotting</div>
         <div class="chip" data-val="clots" onclick="toggleChip(this,'symptoms')">Clots</div>
-        <div class="chip" data-val="dizziness" onclick="toggleChip(this,'symptoms')">Dizziness</div>
-        <div class="chip" data-val="discharge" onclick="toggleChip(this,'symptoms')">Discharge</div>
         <div class="chip" data-val="weak" onclick="toggleChip(this,'symptoms')">Weak</div>
         <div class="chip" data-val="tender_abdomen" onclick="toggleChip(this,'symptoms')">Tender abdomen</div>
+        <div class="chip" data-val="constipation" onclick="toggleChip(this,'symptoms')">Constipation</div>
       </div>
     </div>
 
     <!-- Mood & Energy -->
     <div class="card">
-      <div class="card-title"><span class="icon">💭</span> Mood & Energy</div>
-      <div class="form-group">
-        <div class="form-label">Overall mood</div>
-        <div class="slider-group">
-          <div class="slider-row">
-            <input type="range" class="slider" id="mood-score" min="1" max="10" value="5" oninput="document.getElementById('mood-val').textContent=this.value" />
-            <span class="slider-val" id="mood-val">5</span>
-          </div>
-          <div class="slider-ends"><span>😞 Low</span><span>😄 High</span></div>
-        </div>
-      </div>
-      <div class="form-group">
-        <div class="form-label">Energy level</div>
-        <div class="slider-group">
-          <div class="slider-row">
-            <input type="range" class="slider" id="energy-score" min="1" max="10" value="5" oninput="document.getElementById('energy-val').textContent=this.value" />
-            <span class="slider-val" id="energy-val">5</span>
-          </div>
-          <div class="slider-ends"><span>🪫 Drained</span><span>⚡ Full</span></div>
-        </div>
-      </div>
+      <div class="card-title"><span class="icon">💭</span> Emotions</div>
       <div class="form-group">
         <div class="form-label">Emotions</div>
         <div class="chips" id="emotion-chips">
@@ -309,43 +290,14 @@
 
     <!-- Food -->
     <div class="card">
-      <div class="card-title"><span class="icon">🍽️</span> Food & Cravings</div>
-      <div class="form-group">
-        <label class="form-label">What did you eat today?</label>
-        <textarea class="form-input" id="food-notes" placeholder="e.g. oatmeal for breakfast, salad for lunch..."></textarea>
-      </div>
-      <div class="form-group">
-        <div class="form-label">Cravings</div>
-        <div class="chips" id="craving-chips">
-          <div class="chip" data-val="chocolate" onclick="toggleChip(this,'cravings')">Chocolate</div>
-          <div class="chip" data-val="salty" onclick="toggleChip(this,'cravings')">Salty</div>
-          <div class="chip" data-val="sweet" onclick="toggleChip(this,'cravings')">Sweet</div>
-          <div class="chip" data-val="carbs" onclick="toggleChip(this,'cravings')">Carbs</div>
-          <div class="chip" data-val="fatty" onclick="toggleChip(this,'cravings')">Fatty food</div>
-          <div class="chip" data-val="spicy" onclick="toggleChip(this,'cravings')">Spicy</div>
-          <div class="chip" data-val="comfort" onclick="toggleChip(this,'cravings')">Comfort food</div>
-          <div class="chip" data-val="fruit" onclick="toggleChip(this,'cravings')">Fruit</div>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="form-group" style="margin-bottom:0">
-          <div class="form-label">Water (glasses)</div>
-          <div class="counter-row">
-            <button class="counter-btn" onclick="adjust('water',-1)">−</button>
-            <span class="counter-val" id="water-val">0</span>
-            <button class="counter-btn" onclick="adjust('water',1)">+</button>
-            <span class="counter-unit">glasses</span>
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <div class="form-label">Caffeine (cups)</div>
-          <div class="counter-row">
-            <button class="counter-btn" onclick="adjust('caffeine',-1)">−</button>
-            <span class="counter-val" id="caffeine-val">0</span>
-            <button class="counter-btn" onclick="adjust('caffeine',1)">+</button>
-            <span class="counter-unit">cups</span>
-          </div>
-        </div>
+      <div class="card-title"><span class="icon">🍽️</span> What did you eat today?</div>
+      <div class="chips" id="food-chips">
+        <div class="chip" data-val="carbs" onclick="toggleChip(this,'food')">Carbs</div>
+        <div class="chip" data-val="ice_cream" onclick="toggleChip(this,'food')">Ice cream</div>
+        <div class="chip" data-val="chocolate" onclick="toggleChip(this,'food')">Chocolate</div>
+        <div class="chip" data-val="sugar" onclick="toggleChip(this,'food')">Sugar</div>
+        <div class="chip" data-val="beef" onclick="toggleChip(this,'food')">Beef</div>
+        <div class="chip" data-val="fish" onclick="toggleChip(this,'food')">Fish</div>
       </div>
     </div>
 
@@ -495,7 +447,7 @@ function getEntryDefaults() {
     period: { active: false, flow: null },
     symptoms: [],
     mood: { score: 5, energy: 5, emotions: [] },
-    food: { notes: '', cravings: [], water: 0, caffeine: 0, alcohol: 0 },
+    food: { items: [], notes: '' },
     sleep: { hours: 7, quality: 3, notes: '' },
     exercise: { active: false, types: [], duration: 0, intensity: 'moderate' },
     notes: ''
@@ -504,7 +456,7 @@ function getEntryDefaults() {
 
 /* ===================== COUNTERS ===================== */
 
-const counters = { water: 0, caffeine: 0 };
+const counters = {};
 
 function adjust(key, delta) {
   counters[key] = Math.max(0, (counters[key] || 0) + delta);
@@ -513,7 +465,7 @@ function adjust(key, delta) {
 
 /* ===================== CHIP HELPERS ===================== */
 
-const chipState = { symptoms: [], emotions: [], cravings: [], exercise: [] };
+const chipState = { symptoms: [], emotions: [], food: [], exercise: [] };
 
 function toggleChip(el, group) {
   const val = el.dataset.val;
@@ -660,12 +612,7 @@ function loadLogForm() {
   document.getElementById('energy-val').textContent = entry.mood.energy;
   setChips('emotions', 'emotion-chips', entry.mood.emotions || []);
 
-  document.getElementById('food-notes').value = entry.food.notes || '';
-  setChips('cravings', 'craving-chips', entry.food.cravings || []);
-  counters.water = entry.food.water || 0;
-  counters.caffeine = entry.food.caffeine || 0;
-  document.getElementById('water-val').textContent = counters.water;
-  document.getElementById('caffeine-val').textContent = counters.caffeine;
+  setChips('food', 'food-chips', entry.food.items || []);
 
   document.getElementById('sleep-hours').value = entry.sleep.hours;
   document.getElementById('sleep-hours-val').textContent = entry.sleep.hours + 'h';
@@ -687,14 +634,13 @@ function saveEntry() {
     period: { active: periodActive, flow: periodActive ? getSelectedFlow() : null },
     symptoms: [...chipState.symptoms],
     mood: {
-      score: parseInt(document.getElementById('mood-score').value),
-      energy: parseInt(document.getElementById('energy-score').value),
+      score: 5,
+      energy: 5,
       emotions: [...chipState.emotions]
     },
     food: {
-      notes: document.getElementById('food-notes').value.trim(),
-      cravings: [...chipState.cravings],
-      water: counters.water, caffeine: counters.caffeine
+      items: [...chipState.food],
+      notes: ''
     },
     sleep: {
       hours: parseFloat(document.getElementById('sleep-hours').value),
@@ -1126,11 +1072,11 @@ function exportCSV() {
   const data = loadData();
   const dates = Object.keys(data.entries).sort();
   if (!dates.length) { showToast('No data to export'); return; }
-  const headers = ['date','period_active','period_flow','symptoms','mood_score','energy_score','emotions','food_notes','cravings','water_glasses','caffeine_cups','sleep_hours','sleep_quality','sleep_notes','exercise_types','notes'];
+  const headers = ['date','period_active','period_flow','symptoms','emotions','food_items','sleep_hours','sleep_quality','sleep_notes','exercise_types','notes'];
   const rows = dates.map(date => {
     const e = data.entries[date];
     return [date, e.period.active?'yes':'no', e.period.flow||'', (e.symptoms||[]).join('; '), e.mood.score, e.mood.energy, (e.mood.emotions||[]).join('; '),
-      (e.food.notes||'').replace(/,/g,' '), (e.food.cravings||[]).join('; '), e.food.water, e.food.caffeine,
+      (e.food.items||[]).join('; '),
       e.sleep.hours, e.sleep.quality, (e.sleep.notes||'').replace(/,/g,' '),
       (e.exercise.types||[]).join('; '),
       (e.notes||'').replace(/,/g,' ')].map(v=>`"${v}"`).join(',');
