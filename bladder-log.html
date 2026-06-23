@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#181310">
+<title>Bladder Log</title>
+<style>
+  :root{
+    --bg:#181310;
+    --surface:#231c17;
+    --surface2:#2c241d;
+    --line:#352c23;
+    --text:#ece4d8;
+    --text-dim:#9c9186;
+    --drink:#c98a52;
+    --drink-dim:#4a3a26;
+    --pee:#6b9c87;
+    --pee-dim:#2c3f37;
+    --danger:#b1503f;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  body{
+    padding-bottom:64px;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:480px;
+    margin:0 auto;
+    padding:20px 18px 40px;
+  }
+  header{
+    margin-bottom:18px;
+  }
+  header h1{
+    font-size:22px;
+    font-weight:650;
+    margin:0 0 2px;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--text-dim);
+    font-size:13.5px;
+  }
+
+  /* big action buttons */
+  .actions{
+    display:flex;
+    gap:14px;
+    margin:22px 0 8px;
+  }
+  .actbtn{
+    flex:1;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:22px 10px 16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    color:var(--text);
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:transform .08s ease, background .15s ease;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  .actbtn:active{transform:scale(0.96);}
+  .actbtn.drink{color:var(--drink);}
+  .actbtn.pee{color:var(--pee);}
+  .actbtn svg{width:34px;height:34px;}
+  .actbtn .iconwrap{
+    width:64px;height:64px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .actbtn.drink .iconwrap{background:var(--drink-dim);}
+  .actbtn.pee .iconwrap{background:var(--pee-dim);}
+
+  /* inline drink panel */
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:16px;
+    margin:14px 0 4px;
+    display:none;
+  }
+  .panel.open{display:block;}
+  .panel h3{
+    margin:0 0 10px;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--text-dim);
+    font-weight:600;
+  }
+  .chiprow{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .chip{
+    border:1px solid var(--line);
+    background:var(--surface2);
+    color:var(--text);
+    padding:9px 14px;
+    border-radius:14px;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .chip.selected{
+    border-color:var(--drink);
+    background:var(--drink-dim);
+    color:var(--drink);
+    font-weight:600;
+  }
+  .panel.peemode .chip.selected{
+    border-color:var(--pee);
+    background:var(--pee-dim);
+    color:var(--pee);
+  }
+  .customrow{
+    display:flex;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .customrow input[type=number]{
+    flex:1;
+    background:var(--surface2);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:12px;
+    padding:9px 12px;
+    font-size:15px;
+    width:100%;
+  }
+  .customrow button{
+    background:var(--drink);
+    color:#1b140c;
+    border:none;
+    border-radius:12px;
+    padding:9px 16px;
+    font-weight:700;
+    font-size:14px;
+  }
+  .panel .closepanel{
+    display:block;
+    margin:8px auto 0;
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    font-size:13px;
+    padding:6px;
+  }
+
+  /* today summary */
+  .today{
+    display:flex;
+    gap:10px;
+    margin:20px 0 6px;
+  }
+  .statcard{
+    flex:1;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px 14px;
+  }
+  .statcard .num{
+    font-size:22px;
+    font-weight:700;
+    line-height:1.1;
+  }
+  .statcard .lbl{
+    font-size:12px;
+    color:var(--text-dim);
+    margin-top:2px;
+  }
+
+  /* history */
+  .section-title{
+    margin:26px 0 8px;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--text-dim);
+    font-weight:600;
+  }
+  .daygroup{margin-bottom:18px;}
+  .daygroup .dayhead{
+    font-size:13px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+    display:flex;
+    justify-content:space-between;
+  }
+  .entry{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 12px;
+    margin-bottom:7px;
+  }
+  .entry .dot{
+    width:34px;height:34px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .entry.drink .dot{background:var(--drink-dim);color:var(--drink);}
+  .entry.pee .dot{background:var(--pee-dim);color:var(--pee);}
+  .entry .dot svg{width:18px;height:18px;}
+  .entry .info{flex:1;min-width:0;}
+  .entry .info .main{font-size:14.5px;font-weight:600;}
+  .entry .info .time{font-size:12.5px;color:var(--text-dim);}
+  .entry .iconbtn{
+    background:none;border:none;color:var(--text-dim);
+    padding:6px;font-size:15px;cursor:pointer;
+  }
+  .empty{
+    color:var(--text-dim);
+    font-size:14px;
+    text-align:center;
+    padding:30px 10px;
+  }
+
+  /* edit panel for an entry */
+  .editbox{
+    background:var(--surface2);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    margin:-2px 0 9px;
+  }
+  .editbox label{font-size:12px;color:var(--text-dim);display:block;margin-bottom:4px;}
+  .editbox input, .editbox select{
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:10px;
+    padding:8px 10px;
+    font-size:14.5px;
+    margin-bottom:10px;
+  }
+  .editbox .row{display:flex;gap:8px;}
+  .editbox .row button{
+    flex:1;
+    border:none;
+    border-radius:10px;
+    padding:9px;
+    font-weight:700;
+    font-size:13.5px;
+  }
+  .editbox .save{background:var(--drink);color:#1b140c;}
+  .editbox .del{background:var(--danger);color:#fff;}
+  .editbox .cancel{background:var(--surface);color:var(--text-dim);border:1px solid var(--line);}
+
+  /* export */
+  .exportbtn{
+    width:100%;
+    margin-top:10px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:14px;
+    padding:13px;
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .exportpanel{display:none;margin-top:10px;}
+  .exportpanel.open{display:block;}
+  .exportpanel textarea{
+    width:100%;
+    height:140px;
+    background:var(--surface2);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    border-radius:12px;
+    padding:10px;
+    font-size:11.5px;
+    font-family:ui-monospace, monospace;
+    margin-bottom:8px;
+  }
+  .exportpanel .row{display:flex;gap:8px;margin-bottom:8px;}
+  .exportpanel button, .exportpanel a.btnlike{
+    flex:1;
+    text-align:center;
+    background:var(--drink-dim);
+    color:var(--drink);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+    font-size:13.5px;
+    font-weight:600;
+    text-decoration:none;
+    display:block;
+    cursor:pointer;
+  }
+  .exportpanel .note{
+    font-size:11.5px;
+    color:var(--text-dim);
+    line-height:1.4;
+  }
+
+  .footer-note{
+    margin-top:30px;
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:center;
+    line-height:1.5;
+  }
+  .resetlink{
+    display:block;
+    text-align:center;
+    margin-top:18px;
+    color:var(--text-dim);
+    font-size:12px;
+    background:none;
+    border:none;
+    text-decoration:underline;
+  }
+
+  /* toast */
+  #toast{
+    position:fixed;
+    bottom:18px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--surface2);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:10px 16px;
+    border-radius:14px;
+    font-size:13.5px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:50;
+    max-width:90%;
+  }
+  #toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+    pointer-events:auto;
+  }
+  #toast button{
+    background:none;border:none;color:var(--drink);font-weight:700;font-size:13px;padding:0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Bladder Log</h1>
+    <p>Track what you drink and when you go. Stays on this device — export anytime for your doctor.</p>
+  </header>
+
+  <div class="actions">
+    <div class="actbtn drink" id="openDrink">
+      <div class="iconwrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 3h14l-1.2 15.5A2 2 0 0 1 15.8 20H8.2a2 2 0 0 1-2-1.5L5 3z"/>
+          <path d="M5 3l1 5h12l1-5"/>
+        </svg>
+      </div>
+      <span>Drink</span>
+    </div>
+    <div class="actbtn pee" id="logPee">
+      <div class="iconwrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3C9 7.5 6 11 6 14.5a6 6 0 0 0 12 0C18 11 15 7.5 12 3z"/>
+        </svg>
+      </div>
+      <span>Pee</span>
+    </div>
+  </div>
+
+  <div class="panel" id="drinkPanel">
+    <h3>What</h3>
+    <div class="chiprow" id="typeChips">
+      <div class="chip" data-type="Water">Water</div>
+      <div class="chip" data-type="Coffee">Coffee</div>
+      <div class="chip" data-type="Tea">Tea</div>
+      <div class="chip" data-type="Soda">Soda</div>
+      <div class="chip" data-type="Other">Other</div>
+    </div>
+    <button class="closepanel" id="closeDrink">Cancel</button>
+  </div>
+
+  <div class="today" id="todayStats"></div>
+
+  <div class="section-title">History</div>
+  <div id="history"></div>
+
+  <button class="exportbtn" id="toggleExport">Export for your doctor</button>
+  <div class="exportpanel" id="exportPanel">
+    <textarea id="csvOut" readonly></textarea>
+    <div class="row">
+      <button id="copyCsv">Copy data</button>
+      <a class="btnlike" id="downloadCsv" download="bladder-log.csv">Download .csv</a>
+    </div>
+    <div class="note">If copy doesn't work, tap into the box above, select all, and copy manually. You can paste this into an email, a note, or back into a chat with Claude to look for patterns.</div>
+  </div>
+
+  <button class="resetlink" id="resetAll">Clear all data</button>
+  <div class="footer-note">Not medical advice. This is just a log to help you and your doctor spot patterns.</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'entries';
+  var entries = [];
+  var editingId = null;
+
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  }
+
+  async function loadEntries(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        entries = JSON.parse(raw);
+      }
+    }catch(e){
+      entries = [];
+    }
+    render();
+  }
+
+  async function saveEntries(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }catch(e){
+      showToast('Could not save — try again', null);
+    }
+  }
+
+  function addEntry(entry){
+    entries.push(entry);
+    saveEntries();
+    render();
+  }
+
+  function removeEntry(id){
+    entries = entries.filter(function(e){ return e.id !== id; });
+    saveEntries();
+    render();
+  }
+
+  function updateEntry(id, fields){
+    entries = entries.map(function(e){
+      if(e.id === id){ return Object.assign({}, e, fields); }
+      return e;
+    });
+    saveEntries();
+    render();
+  }
+
+  var toastTimer = null;
+  function showToast(msg, undoFn){
+    var t = document.getElementById('toast');
+    t.innerHTML = '';
+    var span = document.createElement('span');
+    span.textContent = msg;
+    t.appendChild(span);
+    if(undoFn){
+      var btn = document.createElement('button');
+      btn.textContent = 'Undo';
+      btn.onclick = function(){ undoFn(); t.classList.remove('show'); };
+      t.appendChild(btn);
+    }
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 4000);
+  }
+
+  function fmtTime(iso){
+    var d = new Date(iso);
+    return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  }
+  function fmtDateHead(dateStr){
+    var today = new Date();
+    var todayStr = localDateStr(today);
+    var y = new Date(today); y.setDate(y.getDate()-1);
+    var ydayStr = localDateStr(y);
+    if(dateStr === todayStr) return 'Today';
+    if(dateStr === ydayStr) return 'Yesterday';
+    var d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'});
+  }
+  function localDateStr(d){
+    var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+day;
+  }
+  function localDateTimeInputVal(iso){
+    var d = new Date(iso);
+    var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+    var hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
+    return y+'-'+m+'-'+day+'T'+hh+':'+mm;
+  }
+
+  function dropSVG(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3C9 7.5 6 11 6 14.5a6 6 0 0 0 12 0C18 11 15 7.5 12 3z"/></svg>';
+  }
+  function cupSVG(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14l-1.2 15.5A2 2 0 0 1 15.8 20H8.2a2 2 0 0 1-2-1.5L5 3z"/><path d="M5 3l1 5h12l1-5"/></svg>';
+  }
+
+  function render(){
+    renderToday();
+    renderHistory();
+  }
+
+  function renderToday(){
+    var todayStr = localDateStr(new Date());
+    var todays = entries.filter(function(e){ return localDateStr(new Date(e.timestamp)) === todayStr; });
+    var drinks = todays.filter(function(e){ return e.type==='drink'; });
+    var pees = todays.filter(function(e){ return e.type==='pee'; });
+
+    var lastPee = entries.filter(function(e){return e.type==='pee';})
+      .sort(function(a,b){ return new Date(b.timestamp)-new Date(a.timestamp); })[0];
+    var sinceStr = '—';
+    if(lastPee){
+      var mins = Math.round((Date.now() - new Date(lastPee.timestamp).getTime())/60000);
+      var h = Math.floor(mins/60), m = mins%60;
+      sinceStr = (h>0 ? h+'h ' : '') + m+'m';
+    }
+
+    var html = '';
+    html += statCard(pees.length, 'pees today');
+    html += statCard(drinks.length, 'drinks today');
+    html += statCard(sinceStr, 'since last pee');
+    document.getElementById('todayStats').innerHTML = html;
+  }
+  function statCard(num, lbl){
+    return '<div class="statcard"><div class="num">'+num+'</div><div class="lbl">'+lbl+'</div></div>';
+  }
+
+  function renderHistory(){
+    var box = document.getElementById('history');
+    if(entries.length === 0){
+      box.innerHTML = '<div class="empty">Nothing logged yet. Tap Drink or Pee above to start.</div>';
+      return;
+    }
+    var sorted = entries.slice().sort(function(a,b){ return new Date(b.timestamp)-new Date(a.timestamp); });
+    var groups = {};
+    sorted.forEach(function(e){
+      var d = localDateStr(new Date(e.timestamp));
+      if(!groups[d]) groups[d] = [];
+      groups[d].push(e);
+    });
+    var days = Object.keys(groups).sort(function(a,b){ return new Date(b)-new Date(a); });
+
+    var html = '';
+    days.forEach(function(d){
+      var list = groups[d];
+      var dCount = list.filter(function(e){return e.type==='drink';}).length;
+      var pCount = list.filter(function(e){return e.type==='pee';}).length;
+      html += '<div class="daygroup">';
+      html += '<div class="dayhead"><span>'+fmtDateHead(d)+'</span><span>'+dCount+' drinks · '+pCount+' pees</span></div>';
+      list.forEach(function(e){
+        if(editingId === e.id){
+          html += renderEditBox(e);
+        } else {
+          html += renderEntry(e);
+        }
+      });
+      html += '</div>';
+    });
+    box.innerHTML = html;
+    attachHistoryHandlers();
+  }
+
+  function renderEntry(e){
+    var icon = e.type==='drink' ? cupSVG() : dropSVG();
+    var main = e.type==='drink' ? (e.beverage||'Drink') : 'Pee';
+    return '<div class="entry '+e.type+'">'
+      + '<div class="dot">'+icon+'</div>'
+      + '<div class="info"><div class="main">'+main+'</div><div class="time">'+fmtTime(e.timestamp)+'</div></div>'
+      + '<button class="iconbtn" data-edit="'+e.id+'">Edit</button>'
+      + '</div>';
+  }
+
+  function renderEditBox(e){
+    var dtVal = localDateTimeInputVal(e.timestamp);
+    var html = '<div class="editbox">';
+    if(e.type === 'drink'){
+      html += '<label>Beverage</label><select id="editType">';
+      ['Water','Coffee','Tea','Soda','Other'].forEach(function(t){
+        html += '<option '+(e.beverage===t?'selected':'')+'>'+t+'</option>';
+      });
+      html += '</select>';
+    }
+    html += '<label>Time</label><input type="datetime-local" id="editTime" value="'+dtVal+'">';
+    html += '<div class="row">'
+      + '<button class="save" data-save="'+e.id+'">Save</button>'
+      + '<button class="cancel" data-cancel="1">Cancel</button>'
+      + '<button class="del" data-del="'+e.id+'">Delete</button>'
+      + '</div></div>';
+    return html;
+  }
+
+  function attachHistoryHandlers(){
+    document.querySelectorAll('[data-edit]').forEach(function(btn){
+      btn.onclick = function(){ editingId = btn.getAttribute('data-edit'); renderHistory(); };
+    });
+    document.querySelectorAll('[data-cancel]').forEach(function(btn){
+      btn.onclick = function(){ editingId = null; renderHistory(); };
+    });
+    document.querySelectorAll('[data-del]').forEach(function(btn){
+      btn.onclick = function(){
+        if(confirm('Delete this entry?')){
+          removeEntry(btn.getAttribute('data-del'));
+          editingId = null;
+        }
+      };
+    });
+    document.querySelectorAll('[data-save]').forEach(function(btn){
+      btn.onclick = function(){
+        var id = btn.getAttribute('data-save');
+        var timeVal = document.getElementById('editTime').value;
+        var fields = { timestamp: new Date(timeVal).toISOString() };
+        var typeSel = document.getElementById('editType');
+        if(typeSel) fields.beverage = typeSel.value;
+        updateEntry(id, fields);
+        editingId = null;
+      };
+    });
+  }
+
+  // ---- Drink panel ----
+  var drinkPanel = document.getElementById('drinkPanel');
+  document.getElementById('openDrink').onclick = function(){
+    drinkPanel.classList.toggle('open');
+  };
+  document.getElementById('closeDrink').onclick = function(){
+    drinkPanel.classList.remove('open');
+  };
+  document.getElementById('typeChips').addEventListener('click', function(ev){
+    var chip = ev.target.closest('.chip');
+    if(!chip) return;
+    logDrink(chip.getAttribute('data-type'));
+  });
+
+  function logDrink(type){
+    var e = { id: uid(), type:'drink', beverage:type, timestamp: new Date().toISOString() };
+    addEntry(e);
+    drinkPanel.classList.remove('open');
+    showToast(type+' logged', function(){ removeEntry(e.id); });
+  }
+
+  // ---- Pee logging ----
+  document.getElementById('logPee').onclick = function(){
+    var e = { id: uid(), type:'pee', timestamp: new Date().toISOString() };
+    addEntry(e);
+    showToast('Pee logged at '+fmtTime(e.timestamp), function(){ removeEntry(e.id); });
+  };
+
+  // ---- Export ----
+  var exportPanel = document.getElementById('exportPanel');
+  document.getElementById('toggleExport').onclick = function(){
+    exportPanel.classList.toggle('open');
+    if(exportPanel.classList.contains('open')){
+      buildCsv();
+    }
+  };
+  function buildCsv(){
+    var rows = [['Date','Time','Category','Beverage']];
+    var sorted = entries.slice().sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
+    sorted.forEach(function(e){
+      var d = new Date(e.timestamp);
+      var dateStr = localDateStr(d);
+      var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      if(e.type === 'drink'){
+        rows.push([dateStr, timeStr, 'Drink', e.beverage||'']);
+      } else {
+        rows.push([dateStr, timeStr, 'Pee', '']);
+      }
+    });
+    var csv = rows.map(function(r){
+      return r.map(function(v){
+        v = String(v);
+        if(v.indexOf(',')>-1) return '"'+v+'"';
+        return v;
+      }).join(',');
+    }).join('\n');
+    document.getElementById('csvOut').value = csv;
+    var blob = new Blob([csv], {type:'text/csv'});
+    var url = URL.createObjectURL(blob);
+    var link = document.getElementById('downloadCsv');
+    link.href = url;
+  }
+  document.getElementById('copyCsv').onclick = function(){
+    var ta = document.getElementById('csvOut');
+    ta.select();
+    var ok = false;
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(ta.value);
+        ok = true;
+      } else {
+        document.execCommand('copy');
+        ok = true;
+      }
+    }catch(e){}
+    showToast(ok ? 'Copied' : 'Select the text above and copy manually', null);
+  };
+
+  // ---- Reset ----
+  document.getElementById('resetAll').onclick = function(){
+    if(confirm('Delete all logged data? This cannot be undone.')){
+      entries = [];
+      saveEntries();
+      render();
+    }
+  };
+
+  // live "since last pee" tick
+  setInterval(renderToday, 30000);
+
+  loadEntries();
+})();
+</script>
+</body>
+</html>
